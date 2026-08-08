@@ -20,6 +20,8 @@ import {
   Tag,
 } from "@/components/ui";
 import { PageShell } from "@/components/SidePanel";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Toast } from "@/components/Toast";
 import type {
   CalendarEvent,
   ChecklistItemDef,
@@ -108,11 +110,14 @@ export default function ScheduleWorkspace({
     addChecklistItem,
     updateChecklistItem,
     deleteChecklistItem,
+    restoreChecklistItem,
     addCalendarEvent,
     updateCalendarEvent,
     deleteCalendarEvent,
+    restoreCalendarEvent,
     upsertOkrCard,
     deleteOkrCard,
+    restoreOkrCard,
   } = useStore();
 
   const isHr = session?.role === "hr";
@@ -140,6 +145,18 @@ export default function ScheduleWorkspace({
     description: "",
   });
   const [showCheckForm, setShowCheckForm] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<
+    | null
+    | { kind: "checklist"; id: string }
+    | { kind: "okr"; id: string }
+    | { kind: "event"; id: string }
+  >(null);
+  const [undoToast, setUndoToast] = useState<
+    | null
+    | { kind: "checklist"; item: ChecklistItemDef }
+    | { kind: "okr"; card: OKRCard }
+    | { kind: "event"; event: CalendarEvent }
+  >(null);
 
   const [okrEditId, setOkrEditId] = useState<string | null>(null);
   const [okrEmployeeId, setOkrEmployeeId] = useState(currentEmployeeId);
@@ -360,12 +377,10 @@ export default function ScheduleWorkspace({
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (window.confirm("이 체크리스트 항목을 삭제할까요?")) {
-                        deleteChecklistItem(item.id);
-                      }
-                    }}
-                    className="text-[10px] font-semibold text-alert"
+                    onClick={() =>
+                      setPendingDelete({ kind: "checklist", id: item.id })
+                    }
+                    className="min-h-11 px-1 text-[10px] font-semibold text-alert"
                   >
                     삭제
                   </button>
@@ -483,12 +498,10 @@ export default function ScheduleWorkspace({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (window.confirm("이 OKR을 삭제할까요?")) {
-                            deleteOkrCard(card.id);
-                          }
-                        }}
-                        className="text-xs font-semibold text-alert"
+                        onClick={() =>
+                          setPendingDelete({ kind: "okr", id: card.id })
+                        }
+                        className="min-h-11 px-1 text-xs font-semibold text-alert"
                       >
                         삭제
                       </button>
@@ -780,12 +793,10 @@ export default function ScheduleWorkspace({
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            if (window.confirm("이 일정을 삭제할까요?")) {
-                              deleteCalendarEvent(ev.id);
-                            }
-                          }}
-                          className="text-[11px] font-semibold text-alert"
+                          onClick={() =>
+                            setPendingDelete({ kind: "event", id: ev.id })
+                          }
+                          className="min-h-11 px-1 text-[11px] font-semibold text-alert"
                         >
                           삭제
                         </button>
@@ -809,7 +820,7 @@ export default function ScheduleWorkspace({
     >
       {!embedded && (
         <SectionHeading
-          eyebrow="Schedule"
+          eyebrow="일정"
           title="일정 & 체크리스트"
           description="일정을 추가·수정하고, 체크리스트를 자유롭게 관리하세요."
         />
@@ -822,6 +833,61 @@ export default function ScheduleWorkspace({
         <div className="space-y-4">{calendarColumn}</div>
       )}
       {!showTimeline && showChecklist && checklistGrid}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={
+          pendingDelete?.kind === "checklist"
+            ? "체크리스트 항목 삭제"
+            : pendingDelete?.kind === "okr"
+              ? "OKR 삭제"
+              : "일정 삭제"
+        }
+        body={
+          pendingDelete?.kind === "checklist"
+            ? "이 체크리스트 항목을 삭제할까요? 삭제 직후 5초간 되돌릴 수 있어요."
+            : pendingDelete?.kind === "okr"
+              ? "이 OKR을 삭제할까요? 삭제 직후 5초간 되돌릴 수 있어요."
+              : "이 일정을 삭제할까요? 삭제 직후 5초간 되돌릴 수 있어요."
+        }
+        confirmLabel="삭제"
+        tone="danger"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          if (pendingDelete.kind === "checklist") {
+            const item = checklistItems.find((i) => i.id === pendingDelete.id);
+            deleteChecklistItem(pendingDelete.id);
+            if (item) setUndoToast({ kind: "checklist", item });
+          } else if (pendingDelete.kind === "okr") {
+            const card = state.okrCards.find((c) => c.id === pendingDelete.id);
+            deleteOkrCard(pendingDelete.id);
+            if (card) setUndoToast({ kind: "okr", card });
+          } else {
+            const event = state.calendarEvents.find(
+              (e) => e.id === pendingDelete.id
+            );
+            deleteCalendarEvent(pendingDelete.id);
+            if (event) setUndoToast({ kind: "event", event });
+          }
+          setPendingDelete(null);
+        }}
+      />
+      <Toast
+        open={undoToast !== null}
+        message="삭제했어요."
+        actionLabel="되돌리기"
+        onClose={() => setUndoToast(null)}
+        onAction={() => {
+          if (!undoToast) return;
+          if (undoToast.kind === "checklist") {
+            restoreChecklistItem(undoToast.item);
+          } else if (undoToast.kind === "okr") {
+            restoreOkrCard(undoToast.card);
+          } else {
+            restoreCalendarEvent(undoToast.event);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -8,7 +8,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   {
     term: "IX DNA",
     definition:
-      "인터엑스 핵심가치 12가지. 암기보다 오늘 업무에 필요한 3~4개를 실천하는 방식입니다.",
+      "인터엑스 핵심가치 12가지. 암기보다 오늘 업무에 가장 중요한 3가지만 체크리스트로 실천하는 방식입니다.",
     aliases: ["핵심가치", "DNA"],
   },
   {

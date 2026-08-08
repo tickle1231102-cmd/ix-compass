@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import {
   TOP_NAV,
@@ -10,6 +10,11 @@ import {
   sectionDefaultHref,
 } from "@/lib/nav-config";
 import type { UserRole } from "@/lib/types";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { InterxLogo } from "@/components/InterxLogo";
+import { Toast } from "@/components/Toast";
+
+const HEADER_H = 68;
 
 export function NavBar({
   guideHighlightHref = null,
@@ -20,12 +25,22 @@ export function NavBar({
   const router = useRouter();
   const { session, resetDemo, logout } = useStore();
   const role: UserRole = session?.role === "hr" ? "hr" : "newhire";
-  /** Touch / coarse pointer fallback when hover is unavailable. */
-  const [pinnedHref, setPinnedHref] = useState<string | null>(null);
+  const [openHref, setOpenHref] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const closeToast = useCallback(() => setToast(null), []);
+  const closeMenu = useCallback(() => setOpenHref(null), []);
 
   useEffect(() => {
-    setPinnedHref(null);
+    setOpenHref(null);
   }, [pathname]);
+
+  const openItem = TOP_NAV.find((l) => l.href === openHref) ?? null;
+  const openChildren = openItem
+    ? filterNavChildren(openItem.children, role)
+    : [];
+  const menuOpen = openChildren.length > 0;
 
   const accountLabel = session
     ? [
@@ -39,140 +54,181 @@ export function NavBar({
     : "";
 
   return (
-    <header className="sticky top-0 z-30 overflow-visible border-b border-line bg-white/95 backdrop-blur">
-      <div className="flex h-16 items-center justify-between gap-3 overflow-visible px-4 sm:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="text-lg font-black tracking-tight text-brand">IX</span>
-          <span className="text-lg font-bold tracking-tight text-ink">Compass</span>
-        </Link>
+    <header
+      className="relative sticky top-0 z-50 overflow-visible bg-white"
+      onMouseLeave={closeMenu}
+    >
+      <div className="relative z-50 border-b border-line bg-white">
+        <div
+          className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"
+          style={{ height: HEADER_H }}
+        >
+          <InterxLogo />
 
-        {/* Always show every top-level item — no scroll, no wrap, no clip */}
-        <nav className="flex flex-nowrap items-center gap-0.5 overflow-visible sm:gap-1">
-          {TOP_NAV.map((link) => {
-            const children = filterNavChildren(link.children, role);
-            const hasChildren = children.length > 0;
-            const active =
-              link.href === "/"
-                ? pathname === "/"
-                : pathname === link.href || pathname.startsWith(`${link.href}/`);
-            const guided =
-              guideHighlightHref === link.href ||
-              (guideHighlightHref != null &&
-                children.some((c) => c.href === guideHighlightHref));
-            const defaultHref = sectionDefaultHref(link.href, role);
-            const pinned = pinnedHref === link.href;
+          <nav
+            aria-label="주요 메뉴"
+            className="flex min-w-0 flex-1 items-center justify-center gap-0.5 sm:gap-1"
+          >
+            {TOP_NAV.map((link) => {
+              const children = filterNavChildren(link.children, role);
+              const hasChildren = children.length > 0;
+              const active =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname === link.href ||
+                    pathname.startsWith(`${link.href}/`);
+              const highlightPath = guideHighlightHref?.split("#")[0] ?? null;
+              const guided =
+                highlightPath === link.href ||
+                (highlightPath != null &&
+                  children.some((c) => c.href === highlightPath));
+              const defaultHref = sectionDefaultHref(link.href, role);
+              const open = openHref === link.href;
+              const emphasize = guided || active || open;
 
-            const triggerClass = `shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-              guided
-                ? "guide-nav-spotlight bg-brand text-white"
-                : active || pinned
-                  ? "bg-brand-soft text-brand-dark"
-                  : "text-ink-soft group-hover:bg-line-soft group-hover:text-ink hover:bg-line-soft hover:text-ink"
-            }`;
+              const triggerClass = `inline-flex items-center whitespace-nowrap px-2.5 text-sm font-medium transition-colors sm:px-3 sm:text-[15px] ${
+                emphasize ? "text-brand" : "text-ink hover:text-brand"
+              }`;
 
-            if (!hasChildren) {
               return (
-                <Link key={link.href} href={link.href} className={triggerClass}>
-                  {link.label}
-                </Link>
-              );
-            }
-
-            return (
-              <div
-                key={link.href}
-                className="group relative shrink-0"
-                onMouseLeave={() => {
-                  if (pinnedHref === link.href) setPinnedHref(null);
-                }}
-              >
-                <Link
-                  href={defaultHref}
-                  className={triggerClass}
-                  onClick={(e) => {
-                    const coarse =
-                      typeof window !== "undefined" &&
-                      window.matchMedia("(hover: none)").matches;
-                    if (coarse && pinnedHref !== link.href) {
-                      e.preventDefault();
-                      setPinnedHref(link.href);
-                    }
-                  }}
-                >
-                  {link.label}
-                </Link>
-
                 <div
-                  className={`absolute left-0 top-full z-40 min-w-[220px] pt-1 transition-[opacity,visibility] duration-150 ${
-                    pinned
-                      ? "visible opacity-100"
-                      : "invisible opacity-0 group-hover:visible group-hover:opacity-100"
-                  }`}
+                  key={link.href}
+                  className="flex items-center"
+                  style={{ height: HEADER_H }}
+                  onMouseEnter={() =>
+                    setOpenHref(hasChildren ? link.href : null)
+                  }
                 >
-                  <div className="rounded-2xl border border-line bg-white p-2 shadow-lg">
-                    <ul className="space-y-0.5">
-                      {children.map((child) => {
-                        const childActive =
-                          pathname === child.href ||
-                          pathname.startsWith(`${child.href}/`);
-                        return (
-                          <li key={child.href}>
-                            <Link
-                              href={child.href}
-                              onClick={() => setPinnedHref(null)}
-                              className={`block rounded-xl px-3 py-2.5 transition-colors ${
-                                childActive
-                                  ? "bg-brand-soft text-brand-dark"
-                                  : "text-ink-soft hover:bg-line-soft hover:text-ink"
-                              }`}
-                            >
-                              <span className="block text-sm font-bold">
-                                {child.label}
-                              </span>
-                              {child.hint && (
-                                <span className="mt-0.5 block text-xs text-ink-faint">
-                                  {child.hint}
-                                </span>
-                              )}
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
+                  {hasChildren ? (
+                    <Link
+                      href={defaultHref}
+                      className={triggerClass}
+                      style={{ height: HEADER_H }}
+                      aria-expanded={open}
+                      aria-haspopup="true"
+                      onFocus={() => setOpenHref(link.href)}
+                      onClick={(e) => {
+                        const coarse =
+                          typeof window !== "undefined" &&
+                          window.matchMedia("(hover: none)").matches;
+                        if (coarse && openHref !== link.href) {
+                          e.preventDefault();
+                          setOpenHref(link.href);
+                        }
+                      }}
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      aria-current={active ? "page" : undefined}
+                      className={triggerClass}
+                      style={{ height: HEADER_H }}
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </div>
-              </div>
-            );
-          })}
-        </nav>
+              );
+            })}
+          </nav>
 
-        <div className="flex shrink-0 items-center gap-2">
-          {accountLabel && (
-            <span className="hidden rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-soft xl:inline">
-              {accountLabel}
-            </span>
-          )}
-          <button
-            onClick={() => {
-              if (window.confirm("데모 데이터를 초기 상태로 되돌릴까요?")) {
-                resetDemo();
-              }
-            }}
-            className="hidden rounded-full border border-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand hover:text-brand-dark sm:inline"
-          >
-            데모 초기화
-          </button>
-          <button
-            onClick={() => {
-              logout();
-              router.replace("/login");
-            }}
-            className="rounded-full border border-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand hover:text-brand-dark"
-          >
-            로그아웃
-          </button>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            {accountLabel && (
+              <span className="hidden max-w-[12rem] truncate text-xs font-medium text-ink-soft xl:inline">
+                {accountLabel}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setConfirmReset(true)}
+              className="hidden px-2 text-xs font-medium text-ink-soft transition-colors hover:text-brand sm:inline"
+              style={{ height: HEADER_H }}
+            >
+              데모 초기화
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                router.replace("/login");
+              }}
+              className="inline-flex items-center px-2 text-xs font-medium text-ink-soft transition-colors hover:text-brand"
+              style={{ height: HEADER_H }}
+            >
+              로그아웃
+            </button>
+          </div>
         </div>
       </div>
+
+      {menuOpen && (
+        <div
+          className="absolute left-0 right-0 z-50 border-b border-line bg-white shadow-[0_16px_40px_rgba(20,33,61,0.12)]"
+          style={{ top: HEADER_H }}
+          onMouseEnter={() => setOpenHref(openHref)}
+        >
+          <div
+            className="mx-auto flex max-w-6xl flex-wrap justify-start gap-0 px-4 py-8 sm:px-6"
+            role="menu"
+            aria-label={`${openItem?.label ?? ""} 하위 메뉴`}
+          >
+            {openChildren.map((child, idx) => {
+              const childActive =
+                pathname === child.href ||
+                pathname.startsWith(`${child.href}/`);
+              return (
+                <div
+                  key={child.href}
+                  className={`w-[200px] shrink-0 px-5 first:pl-0 sm:w-[220px] ${
+                    idx > 0 ? "border-l border-line" : ""
+                  }`}
+                >
+                  <Link
+                    href={child.href}
+                    role="menuitem"
+                    onClick={closeMenu}
+                    className="group block py-1"
+                  >
+                    <span
+                      className={`block text-[15px] font-bold transition-colors group-hover:text-brand ${
+                        childActive ? "text-brand" : "text-ink"
+                      }`}
+                    >
+                      {child.label}
+                    </span>
+                    {child.hint && (
+                      <span className="mt-2 block text-sm leading-relaxed text-ink-soft">
+                        {child.hint}
+                      </span>
+                    )}
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={confirmReset}
+        title="데모 초기화"
+        body="데모 데이터를 초기 상태로 되돌릴까요? 이 브라우저에 저장된 진행 내용이 초기화됩니다."
+        confirmLabel="초기화"
+        tone="danger"
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={() => {
+          resetDemo();
+          setConfirmReset(false);
+          setToast("데모 데이터를 초기화했어요.");
+        }}
+      />
+      <Toast
+        open={Boolean(toast)}
+        message={toast ?? ""}
+        onClose={closeToast}
+      />
     </header>
   );
 }

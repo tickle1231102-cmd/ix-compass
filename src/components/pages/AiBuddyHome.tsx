@@ -3,9 +3,12 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { BuddyChatPanel } from "@/components/BuddyChatPanel";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Toast } from "@/components/Toast";
 import { Eyebrow, Tag } from "@/components/ui";
 import { getBuddyThreads } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
+import type { BuddyThread } from "@/lib/types";
 
 function formatDate(iso: string) {
   try {
@@ -21,12 +24,15 @@ function formatDate(iso: string) {
 }
 
 export default function AiBuddyPage() {
-  const { state, currentEmployeeId, deleteBuddyThread } = useStore();
+  const { state, currentEmployeeId, deleteBuddyThread, restoreBuddyThread } =
+    useStore();
 
   const threads = getBuddyThreads(state, currentEmployeeId);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [freshChat, setFreshChat] = useState(false);
   const [chatNonce, setChatNonce] = useState(0);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [undoThread, setUndoThread] = useState<BuddyThread | null>(null);
 
   const currentId = useMemo(() => {
     if (freshChat) return null;
@@ -51,12 +57,15 @@ export default function AiBuddyPage() {
     setActiveId(id);
   }
 
-  function handleDelete(threadIdToDelete: string) {
-    if (!window.confirm("이 대화를 삭제할까요?")) return;
-    deleteBuddyThread(threadIdToDelete);
-    if (activeId === threadIdToDelete) {
+  function confirmDelete() {
+    if (!pendingDeleteId) return;
+    const thread = threads.find((t) => t.id === pendingDeleteId) ?? null;
+    deleteBuddyThread(pendingDeleteId);
+    if (activeId === pendingDeleteId) {
       setActiveId(null);
     }
+    setPendingDeleteId(null);
+    if (thread) setUndoThread(thread);
   }
 
   const pastThreads = currentId
@@ -67,7 +76,7 @@ export default function AiBuddyPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <Eyebrow>Free Ask</Eyebrow>
+          <Eyebrow>자유 질문</Eyebrow>
           <h3 className="mt-1 text-lg font-bold text-ink">자유 질문</h3>
           <p className="mt-1 text-sm text-ink-soft">
             온보딩·복지·개발환경·핵심가치 등 궁금한 점을 바로 물어보세요.
@@ -76,7 +85,7 @@ export default function AiBuddyPage() {
         <button
           type="button"
           onClick={handleNewChat}
-          className="text-sm font-semibold text-brand-dark hover:underline"
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-dark hover:underline"
         >
           + 새 대화
         </button>
@@ -103,7 +112,7 @@ export default function AiBuddyPage() {
                     <button
                       type="button"
                       onClick={() => handleSelectThread(thread.id)}
-                      className="min-w-0 flex-1 text-left"
+                      className="min-h-11 min-w-0 flex-1 text-left"
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="truncate text-sm font-semibold text-ink">
@@ -120,8 +129,8 @@ export default function AiBuddyPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(thread.id)}
-                      className="shrink-0 rounded-full border border-line px-2 py-1 text-[11px] font-medium text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:border-alert hover:text-alert"
+                      onClick={() => setPendingDeleteId(thread.id)}
+                      className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-line px-3 py-1 text-[11px] font-medium text-ink-faint transition-colors hover:border-alert hover:text-alert sm:opacity-0 sm:group-hover:opacity-100"
                     >
                       삭제
                     </button>
@@ -143,6 +152,25 @@ export default function AiBuddyPage() {
           익명 피드백
         </Link>
       </p>
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title="대화 삭제"
+        body="이 대화를 삭제할까요? 삭제 직후 5초간 되돌릴 수 있어요."
+        confirmLabel="삭제"
+        tone="danger"
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
+      <Toast
+        open={undoThread !== null}
+        message="대화를 삭제했어요."
+        actionLabel="되돌리기"
+        onClose={() => setUndoThread(null)}
+        onAction={() => {
+          if (undoThread) restoreBuddyThread(undoThread);
+        }}
+      />
     </div>
   );
 }

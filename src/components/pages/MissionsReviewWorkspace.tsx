@@ -84,8 +84,7 @@ export default function HrMissionReviewPage() {
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   <Tag tone="neutral">
-                    성공 기준 {item.forHr.criteriaDone}/
-                    {item.forHr.criteriaTotal}
+                    결과물 {item.forHr.artifactCount}건
                   </Tag>
                   <Tag tone="neutral">
                     가이드 실천 {item.forHr.practicedGuideCount}건

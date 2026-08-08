@@ -1,27 +1,26 @@
 // Domain types for the IX Compass onboarding prototype.
-// DNA values below are an illustrative placeholder set (only "강박적 호기심"
-// and "미래를 낙관하는 도전" are confirmed public InterX DNA terms) — the data
-// model is designed so the real 12 IX DNA can be swapped in without code changes.
+// 12 InterX core values (DNA) — used by intro, missions, and AI work guide.
 
 export type DNAId =
-  | "curiosity"
-  | "challenge"
-  | "field"
-  | "ownership"
-  | "data"
-  | "speed"
-  | "candor"
-  | "trust"
-  | "customer"
-  | "global"
-  | "reframe"
-  | "results";
+  | "goal_sense"
+  | "time_mastery"
+  | "grit"
+  | "value_solve"
+  | "critical_thinking"
+  | "innovation_accel"
+  | "result_excellence"
+  | "growth_drive"
+  | "optimistic_challenge"
+  | "growth_feedback"
+  | "strategic_network"
+  | "curiosity";
 
 export interface DNAValue {
   id: DNAId;
   label: string;
   shortLabel: string;
   description: string;
+  emoji?: string;
 }
 
 export type RiskLevel = "stable" | "watch" | "alert";
@@ -197,7 +196,6 @@ export interface MissionTemplate {
   week: number;
   title: string;
   description: string;
-  successCriteria: string[];
   dnaFocus: DNAId[];
 }
 
@@ -219,7 +217,6 @@ export interface MissionAssignment {
   week: number;
   title: string;
   description: string;
-  successCriteria: string[];
   dnaFocus: DNAId[];
   dueAt: string;
   status: MissionAssignmentStatus;
@@ -228,15 +225,31 @@ export interface MissionAssignment {
   priority: "normal" | "high";
 }
 
+export type MissionAttachmentKind = "pdf" | "word" | "text" | "other";
+
+/** Deliverable attached when submitting for AI feedback (demo: stored locally). */
+export interface MissionAttachment {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  kind: MissionAttachmentKind;
+  /** Plain-text body or extracted preview for AI (never shown raw to HR). */
+  textContent?: string;
+  /** Small files may keep a data URL for local re-open; optional. */
+  dataUrl?: string;
+}
+
 export interface MissionCheckIn {
   id: string;
   assignmentId: string;
   employeeId: string;
-  doneCriteriaIds: string[];
   /** Private blocker note — AI only; never shown to HR. */
   privateNote?: string;
   /** Optional structured artifact (link or short label). */
   artifactNote?: string;
+  /** Submitted deliverable files / text for AI feedback. */
+  attachments?: MissionAttachment[];
   guideSessionIds: string[];
   createdAt: string;
 }
@@ -252,8 +265,7 @@ export interface MissionFeedbackForHr {
   progressPct: number;
   riskLevel: RiskLevel;
   interventionHint: string;
-  criteriaDone: number;
-  criteriaTotal: number;
+  artifactCount: number;
   practicedGuideCount: number;
 }
 

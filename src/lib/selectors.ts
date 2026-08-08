@@ -259,17 +259,14 @@ export function computeAssignmentProgressPct(
   if (!assignment) return 0;
   const checkIns = getCheckInsForAssignment(state, assignmentId);
   const guides = getGuidesForAssignment(state, assignmentId);
-  const criteriaTotal = Math.max(1, assignment.successCriteria.length);
-  const doneSet = new Set<string>();
-  for (const c of checkIns) {
-    for (const id of c.doneCriteriaIds) doneSet.add(id);
-  }
-  const criteriaDone = Math.min(criteriaTotal, doneSet.size);
+  const artifactCount =
+    checkIns.reduce((sum, c) => sum + (c.attachments?.length ?? 0), 0) +
+    checkIns.filter((c) => c.artifactNote?.trim()).length;
   const practiced = guides.reduce((s, g) => s + g.practicedGuideIds.length, 0);
-  return Math.min(
-    100,
-    Math.round((criteriaDone / criteriaTotal) * 70) + Math.min(30, practiced * 10)
-  );
+  const deliverablePct =
+    artifactCount === 0 ? 0 : Math.min(60, 35 + artifactCount * 15);
+  const guidePct = Math.min(40, practiced * 12);
+  return Math.min(100, deliverablePct + guidePct);
 }
 
 export function getChecklistsForEmployee(

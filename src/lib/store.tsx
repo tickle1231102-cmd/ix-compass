@@ -26,6 +26,7 @@ import type {
   DeptTeam,
   Employee,
   MissionAssignment,
+  MissionAttachment,
   MissionCheckIn,
   MissionFeedback,
   OKRCard,
@@ -106,13 +107,12 @@ function seedState(): State {
     buddyThreads: [],
     missionAssignments: SEED_MISSION_ASSIGNMENTS.map((a) => ({
       ...a,
-      successCriteria: [...a.successCriteria],
       dnaFocus: [...a.dnaFocus],
     })),
     missionCheckIns: SEED_MISSION_CHECKINS.map((c) => ({
       ...c,
-      doneCriteriaIds: [...c.doneCriteriaIds],
       guideSessionIds: [...c.guideSessionIds],
+      attachments: c.attachments?.map((att) => ({ ...att })),
     })),
     missionFeedbacks: SEED_MISSION_FEEDBACKS.map((f) => ({
       ...f,
@@ -148,7 +148,6 @@ type Action =
       week: number;
       title: string;
       description: string;
-      successCriteria: string[];
       dnaFocus: DNAId[];
       dueAt: string;
       priority?: "normal" | "high";
@@ -158,7 +157,6 @@ type Action =
       id: string;
       title: string;
       description: string;
-      successCriteria: string[];
       dnaFocus: DNAId[];
       dueAt: string;
       priority: "normal" | "high";
@@ -166,9 +164,11 @@ type Action =
   | {
       type: "SUBMIT_MISSION_CHECKIN";
       assignmentId: string;
-      doneCriteriaIds: string[];
       privateNote?: string;
       artifactNote?: string;
+      attachments?: MissionAttachment[];
+      /** When true, generate AI feedback immediately after saving the check-in. */
+      generateFeedback?: boolean;
     }
   | { type: "GENERATE_MISSION_FEEDBACK"; assignmentId: string }
   | {
@@ -193,6 +193,7 @@ type Action =
       stage: ChecklistStage;
     }
   | { type: "DELETE_CHECKLIST_ITEM"; id: string }
+  | { type: "RESTORE_CHECKLIST_ITEM"; item: ChecklistItemDef }
   | {
       type: "ADD_CALENDAR_EVENT";
       title: string;
@@ -211,6 +212,7 @@ type Action =
       description?: string;
     }
   | { type: "DELETE_CALENDAR_EVENT"; id: string }
+  | { type: "RESTORE_CALENDAR_EVENT"; event: CalendarEvent }
   | {
       type: "UPSERT_OKR_CARD";
       id?: string;
@@ -220,6 +222,7 @@ type Action =
       status?: OKRCard["status"];
     }
   | { type: "DELETE_OKR_CARD"; id: string }
+  | { type: "RESTORE_OKR_CARD"; card: OKRCard }
   | {
       type: "ADD_COMMUNITY_POST";
       channel: CommunityChannel;
@@ -234,7 +237,8 @@ type Action =
   | { type: "RENAME_BUDDY_THREAD"; threadId: string; title: string }
   | { type: "APPEND_BUDDY_USER_MESSAGE"; threadId: string; content: string }
   | { type: "APPEND_BUDDY_ASSISTANT_MESSAGE"; threadId: string; content: string }
-  | { type: "DELETE_BUDDY_THREAD"; threadId: string };
+  | { type: "DELETE_BUDDY_THREAD"; threadId: string }
+  | { type: "RESTORE_BUDDY_THREAD"; thread: BuddyThread };
 
 function actorEmployeeId(state: State): string | null {
   return state.session?.employeeId ?? null;
@@ -246,6 +250,61 @@ function recomputeRisk(state: State, employeeId: string): Employee[] {
   return state.employees.map((e) =>
     e.id === employeeId ? { ...e, riskLevel: note.level } : e
   );
+}
+
+function withMissionFeedback(state: State, assignmentId: string): State {
+  const assignment = state.missionAssignments.find((a) => a.id === assignmentId);
+  if (!assignment) return state;
+  const checkIns = state.missionCheckIns.filter(
+    (c) => c.assignmentId === assignmentId
+  );
+  const guides = state.contextChecklists.filter(
+    (c) => c.assignmentId === assignmentId
+  );
+  const result = generateMissionFeedback(assignment, checkIns, guides);
+  const feedback: MissionFeedback = {
+    id: `fb-${assignmentId}-${Date.now()}`,
+    assignmentId: assignment.id,
+    employeeId: assignment.employeeId,
+    week: assignment.week,
+    missionTitle: assignment.title,
+    forNewhire: result.forNewhire,
+    forHr: result.forHr,
+    generatedAt: new Date().toISOString(),
+    hrReviewed: result.forHr.riskLevel === "stable",
+  };
+  const newEvidence: DNAEvidence[] = result.dnaTags.map((dnaId) => ({
+    id: `ev-mission-${assignment.id}-${dnaId}-${Date.now()}`,
+    employeeId: assignment.employeeId,
+    dnaId,
+    source: "mission" as const,
+    sourceLabel: `${assignment.week}주차 미션`,
+    snippet: `${assignment.title} · 진행 ${result.forHr.progressPct}%`,
+    week: assignment.week,
+    createdAt: new Date().toISOString(),
+  }));
+  const missionAssignments = state.missionAssignments.map((a) =>
+    a.id === assignment.id
+      ? {
+          ...a,
+          status:
+            result.forHr.riskLevel === "stable"
+              ? ("completed" as const)
+              : ("awaiting_review" as const),
+        }
+      : a
+  );
+  const nextState: State = {
+    ...state,
+    missionFeedbacks: [
+      ...state.missionFeedbacks.filter((f) => f.assignmentId !== assignment.id),
+      feedback,
+    ],
+    missionAssignments,
+    evidence: [...state.evidence, ...newEvidence],
+  };
+  nextState.employees = recomputeRisk(nextState, assignment.employeeId);
+  return nextState;
 }
 
 function reducer(state: State, action: Action): State {
@@ -483,7 +542,6 @@ function reducer(state: State, action: Action): State {
         week: action.week,
         title: action.title,
         description: action.description,
-        successCriteria: [...action.successCriteria],
         dnaFocus: [...action.dnaFocus],
         dueAt: action.dueAt,
         status: "assigned",
@@ -506,7 +564,6 @@ function reducer(state: State, action: Action): State {
                 ...a,
                 title: action.title,
                 description: action.description,
-                successCriteria: [...action.successCriteria],
                 dnaFocus: [...action.dnaFocus],
                 dueAt: action.dueAt,
                 priority: action.priority,
@@ -529,9 +586,12 @@ function reducer(state: State, action: Action): State {
         id: `chk-${action.assignmentId}-${Date.now()}`,
         assignmentId: action.assignmentId,
         employeeId,
-        doneCriteriaIds: [...action.doneCriteriaIds],
         privateNote: action.privateNote?.trim() || undefined,
         artifactNote: action.artifactNote?.trim() || undefined,
+        attachments:
+          action.attachments && action.attachments.length > 0
+            ? action.attachments.map((a) => ({ ...a }))
+            : undefined,
         guideSessionIds,
         createdAt: new Date().toISOString(),
       };
@@ -540,11 +600,15 @@ function reducer(state: State, action: Action): State {
           ? { ...a, status: "in_progress" as const }
           : a
       );
-      return {
+      const withCheckIn: State = {
         ...state,
         missionCheckIns: [...state.missionCheckIns, checkIn],
         missionAssignments,
       };
+      if (action.generateFeedback) {
+        return withMissionFeedback(withCheckIn, action.assignmentId);
+      }
+      return withCheckIn;
     }
 
     case "GENERATE_MISSION_FEEDBACK": {
@@ -561,58 +625,7 @@ function reducer(state: State, action: Action): State {
       ) {
         return state;
       }
-      const checkIns = state.missionCheckIns.filter(
-        (c) => c.assignmentId === action.assignmentId
-      );
-      const guides = state.contextChecklists.filter(
-        (c) => c.assignmentId === action.assignmentId
-      );
-      const result = generateMissionFeedback(assignment, checkIns, guides);
-      const feedback: MissionFeedback = {
-        id: `fb-${action.assignmentId}-${Date.now()}`,
-        assignmentId: assignment.id,
-        employeeId: assignment.employeeId,
-        week: assignment.week,
-        missionTitle: assignment.title,
-        forNewhire: result.forNewhire,
-        forHr: result.forHr,
-        generatedAt: new Date().toISOString(),
-        hrReviewed: result.forHr.riskLevel === "stable",
-      };
-      const newEvidence: DNAEvidence[] = result.dnaTags.map((dnaId) => ({
-        id: `ev-mission-${assignment.id}-${dnaId}-${Date.now()}`,
-        employeeId: assignment.employeeId,
-        dnaId,
-        source: "mission" as const,
-        sourceLabel: `${assignment.week}주차 미션`,
-        snippet: `${assignment.title} · 진행 ${result.forHr.progressPct}%`,
-        week: assignment.week,
-        createdAt: new Date().toISOString(),
-      }));
-      const missionAssignments = state.missionAssignments.map((a) =>
-        a.id === assignment.id
-          ? {
-              ...a,
-              status:
-                result.forHr.riskLevel === "stable"
-                  ? ("completed" as const)
-                  : ("awaiting_review" as const),
-            }
-          : a
-      );
-      const nextState: State = {
-        ...state,
-        missionFeedbacks: [
-          ...state.missionFeedbacks.filter(
-            (f) => f.assignmentId !== assignment.id
-          ),
-          feedback,
-        ],
-        missionAssignments,
-        evidence: [...state.evidence, ...newEvidence],
-      };
-      nextState.employees = recomputeRisk(nextState, assignment.employeeId);
-      return nextState;
+      return withMissionFeedback(state, action.assignmentId);
     }
 
     case "MARK_MISSION_FEEDBACK_REVIEWED": {
@@ -744,6 +757,13 @@ function reducer(state: State, action: Action): State {
         })),
       };
 
+    case "RESTORE_CHECKLIST_ITEM":
+      if (state.checklistItems.some((i) => i.id === action.item.id)) return state;
+      return {
+        ...state,
+        checklistItems: [...state.checklistItems, action.item],
+      };
+
     case "ADD_CALENDAR_EVENT": {
       const title = action.title.trim();
       if (!title || !action.date) return state;
@@ -788,6 +808,13 @@ function reducer(state: State, action: Action): State {
         calendarEvents: state.calendarEvents.filter((e) => e.id !== action.id),
       };
 
+    case "RESTORE_CALENDAR_EVENT":
+      if (state.calendarEvents.some((e) => e.id === action.event.id)) return state;
+      return {
+        ...state,
+        calendarEvents: [...state.calendarEvents, action.event],
+      };
+
     case "UPSERT_OKR_CARD": {
       const now = new Date().toISOString();
       if (action.id) {
@@ -824,6 +851,13 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         okrCards: state.okrCards.filter((c) => c.id !== action.id),
+      };
+
+    case "RESTORE_OKR_CARD":
+      if (state.okrCards.some((c) => c.id === action.card.id)) return state;
+      return {
+        ...state,
+        okrCards: [...state.okrCards, action.card],
       };
 
     case "ADD_COMMUNITY_POST": {
@@ -944,6 +978,13 @@ function reducer(state: State, action: Action): State {
         buddyThreads: state.buddyThreads.filter((t) => t.id !== action.threadId),
       };
 
+    case "RESTORE_BUDDY_THREAD":
+      if (state.buddyThreads.some((t) => t.id === action.thread.id)) return state;
+      return {
+        ...state,
+        buddyThreads: [...state.buddyThreads, action.thread],
+      };
+
     default:
       return state;
   }
@@ -982,6 +1023,7 @@ interface StoreValue {
     status?: OKRCard["status"];
   }) => void;
   deleteOkrCard: (id: string) => void;
+  restoreOkrCard: (card: OKRCard) => void;
   submitAskQuestion: (text: string) => void;
   assignMission: (payload: {
     employeeId: string;
@@ -989,7 +1031,6 @@ interface StoreValue {
     week: number;
     title: string;
     description: string;
-    successCriteria: string[];
     dnaFocus: DNAId[];
     dueAt: string;
     priority?: "normal" | "high";
@@ -998,16 +1039,16 @@ interface StoreValue {
     id: string;
     title: string;
     description: string;
-    successCriteria: string[];
     dnaFocus: DNAId[];
     dueAt: string;
     priority: "normal" | "high";
   }) => void;
   submitMissionCheckIn: (payload: {
     assignmentId: string;
-    doneCriteriaIds: string[];
     privateNote?: string;
     artifactNote?: string;
+    attachments?: MissionAttachment[];
+    generateFeedback?: boolean;
   }) => void;
   generateMissionFeedbackFor: (assignmentId: string) => void;
   markMissionFeedbackReviewed: (id: string, hrInternalNote?: string) => void;
@@ -1026,6 +1067,7 @@ interface StoreValue {
     stage: ChecklistStage;
   }) => void;
   deleteChecklistItem: (id: string) => void;
+  restoreChecklistItem: (item: ChecklistItemDef) => void;
   addCalendarEvent: (payload: {
     title: string;
     date: string;
@@ -1042,6 +1084,7 @@ interface StoreValue {
     description?: string;
   }) => void;
   deleteCalendarEvent: (id: string) => void;
+  restoreCalendarEvent: (event: CalendarEvent) => void;
   addCommunityPost: (payload: {
     channel: CommunityChannel;
     body: string;
@@ -1056,11 +1099,12 @@ interface StoreValue {
   appendBuddyUserMessage: (threadId: string, content: string) => void;
   appendBuddyAssistantMessage: (threadId: string, content: string) => void;
   deleteBuddyThread: (threadId: string) => void;
+  restoreBuddyThread: (thread: BuddyThread) => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
 
-const STORAGE_KEY = "ix-compass-state-v4";
+const STORAGE_KEY = "ix-compass-state-v7";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, seedState);
@@ -1133,7 +1177,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       week: number;
       title: string;
       description: string;
-      successCriteria: string[];
       dnaFocus: DNAId[];
       dueAt: string;
       priority?: "normal" | "high";
@@ -1145,7 +1188,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       id: string;
       title: string;
       description: string;
-      successCriteria: string[];
       dnaFocus: DNAId[];
       dueAt: string;
       priority: "normal" | "high";
@@ -1155,9 +1197,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const submitMissionCheckIn = useCallback(
     (payload: {
       assignmentId: string;
-      doneCriteriaIds: string[];
       privateNote?: string;
       artifactNote?: string;
+      attachments?: MissionAttachment[];
+      generateFeedback?: boolean;
     }) => dispatch({ type: "SUBMIT_MISSION_CHECKIN", ...payload }),
     []
   );
@@ -1206,6 +1249,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     (id: string) => dispatch({ type: "DELETE_CHECKLIST_ITEM", id }),
     []
   );
+  const restoreChecklistItem = useCallback(
+    (item: ChecklistItemDef) =>
+      dispatch({ type: "RESTORE_CHECKLIST_ITEM", item }),
+    []
+  );
   const addCalendarEvent = useCallback(
     (payload: {
       title: string;
@@ -1248,6 +1296,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     (id: string) => dispatch({ type: "DELETE_CALENDAR_EVENT", id }),
     []
   );
+  const restoreCalendarEvent = useCallback(
+    (event: CalendarEvent) =>
+      dispatch({ type: "RESTORE_CALENDAR_EVENT", event }),
+    []
+  );
   const upsertOkrCard = useCallback(
     (payload: {
       id?: string;
@@ -1260,6 +1313,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   );
   const deleteOkrCard = useCallback(
     (id: string) => dispatch({ type: "DELETE_OKR_CARD", id }),
+    []
+  );
+  const restoreOkrCard = useCallback(
+    (card: OKRCard) => dispatch({ type: "RESTORE_OKR_CARD", card }),
     []
   );
   const addCommunityPost = useCallback(
@@ -1298,6 +1355,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     (threadId: string) => dispatch({ type: "DELETE_BUDDY_THREAD", threadId }),
     []
   );
+  const restoreBuddyThread = useCallback(
+    (thread: BuddyThread) =>
+      dispatch({ type: "RESTORE_BUDDY_THREAD", thread }),
+    []
+  );
 
   const currentEmployeeId = state.session?.employeeId ?? DEMO_EMPLOYEE_ID;
 
@@ -1321,6 +1383,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       rejectOKR,
       upsertOkrCard,
       deleteOkrCard,
+      restoreOkrCard,
       submitAskQuestion,
       assignMission,
       updateMissionAssignment,
@@ -1333,15 +1396,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addChecklistItem,
       updateChecklistItem,
       deleteChecklistItem,
+      restoreChecklistItem,
       addCalendarEvent,
       updateCalendarEvent,
       deleteCalendarEvent,
+      restoreCalendarEvent,
       addCommunityPost,
       createBuddyThread,
       renameBuddyThread,
       appendBuddyUserMessage,
       appendBuddyAssistantMessage,
       deleteBuddyThread,
+      restoreBuddyThread,
     }),
     [
       state,
@@ -1357,6 +1423,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       rejectOKR,
       upsertOkrCard,
       deleteOkrCard,
+      restoreOkrCard,
       submitAskQuestion,
       assignMission,
       updateMissionAssignment,
@@ -1369,15 +1436,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addChecklistItem,
       updateChecklistItem,
       deleteChecklistItem,
+      restoreChecklistItem,
       addCalendarEvent,
       updateCalendarEvent,
       deleteCalendarEvent,
+      restoreCalendarEvent,
       addCommunityPost,
       createBuddyThread,
       renameBuddyThread,
       appendBuddyUserMessage,
       appendBuddyAssistantMessage,
       deleteBuddyThread,
+      restoreBuddyThread,
     ]
   );
 

@@ -52,20 +52,28 @@ export function generateMissionFeedback(
   forHr: MissionFeedbackForHr;
   dnaTags: DNAId[];
 } {
-  const criteriaTotal = Math.max(1, assignment.successCriteria.length);
-  const doneSet = new Set<string>();
-  for (const c of checkIns) {
-    for (const id of c.doneCriteriaIds) doneSet.add(id);
-  }
-  const criteriaDone = Math.min(criteriaTotal, doneSet.size);
   const practicedGuideCount = guideSessions.reduce(
     (sum, g) => sum + g.practicedGuideIds.length,
     0
   );
 
-  const criteriaPct = Math.round((criteriaDone / criteriaTotal) * 70);
-  const guidePct = Math.min(30, practicedGuideCount * 10);
-  const progressPct = Math.min(100, criteriaPct + guidePct);
+  const attachments = checkIns.flatMap((c) => c.attachments ?? []);
+  const artifactLabels = [
+    ...attachments.map((a) => a.name),
+    ...checkIns.map((c) => c.artifactNote?.trim()).filter(Boolean),
+  ] as string[];
+  const artifactCount =
+    attachments.length +
+    checkIns.filter((c) => c.artifactNote?.trim()).length;
+  const textPreview = attachments
+    .filter((a) => a.kind === "text" && a.textContent)
+    .map((a) => a.textContent!.slice(0, 280))
+    .join(" ");
+
+  const deliverablePct =
+    artifactCount === 0 ? 0 : Math.min(60, 35 + artifactCount * 15);
+  const guidePct = Math.min(40, practicedGuideCount * 12);
+  const progressPct = Math.min(100, deliverablePct + guidePct);
 
   const overdue =
     new Date(assignment.dueAt).getTime() < Date.now() && progressPct < 80;
@@ -86,33 +94,40 @@ export function generateMissionFeedback(
   const focusDna = assignment.dnaFocus[0]
     ? DNA_MAP.get(assignment.dnaFocus[0])
     : undefined;
-  const remaining = assignment.successCriteria.filter(
-    (_, i) => !doneSet.has(String(i))
-  );
 
-  const nextActions: string[] =
-    remaining.length > 0
-      ? remaining.slice(0, 2).map((c) => `성공 기준 완료: ${c}`)
-      : [
-          "AI 업무 가이드로 오늘 실천 1건 더 체크",
-          focusDna
-            ? `"${focusDna.label}"를 팀에 한 줄로 공유`
-            : "이번 주 성과를 한 줄로 정리",
-        ];
+  const nextActions: string[] = [
+    focusDna
+      ? `"${focusDna.label}"를 팀에 한 줄로 공유`
+      : "이번 주 성과를 한 줄로 정리",
+    "제출한 결과물을 다음 액션 1개로 이어서 실행하기",
+  ];
 
   if (practicedGuideCount < 2) {
     nextActions.unshift("AI 업무 가이드 실천 2건 이상 완료하기");
   }
 
+  const deliverableLine =
+    artifactCount > 0
+      ? `제출한 결과물 ${artifactCount}건(${artifactLabels.slice(0, 3).join(", ")}${
+          artifactLabels.length > 3 ? " 외" : ""
+        })을 기준으로 피드백했어요.`
+      : "결과물 첨부가 없어 가이드 실천만으로 피드백했어요.";
+
   let coachText: string;
   if (progressPct >= 80) {
-    coachText = `미션 「${assignment.title}」 진행이 좋아요 (${progressPct}%). ${
+    coachText = `미션 「${assignment.title}」 진행이 좋아요 (${progressPct}%). ${deliverableLine} ${
       focusDna ? `"${focusDna.label}" ` : ""
-    }핵심가치가 실천으로 잘 이어지고 있어요. 남은 성공 기준만 마무리하면 이번 주 완주예요.`;
+    }핵심가치가 실천으로 잘 이어지고 있어요.`;
   } else if (hasPrivateRisk) {
-    coachText = `진행 ${progressPct}%예요. 막히는 느낌이 있어도 괜찮아요 — 그 내용은 AI만 보고, 인사팀에는 진행률·요약만 전달됩니다. 버디와 짧은 한 줄부터 나눠 보면 다음 액션이 훨씬 가벼워져요.`;
+    coachText = `진행 ${progressPct}%예요. ${deliverableLine} 막히는 느낌이 있어도 괜찮아요 — 프라이빗 노트와 결과물 원문은 AI만 보고, 인사팀에는 진행률·요약만 전달됩니다.`;
+  } else if (textPreview) {
+    coachText = `미션 「${assignment.title}」 현재 ${progressPct}%예요. ${deliverableLine} 제출 텍스트 요지: “${textPreview.slice(0, 120)}${textPreview.length > 120 ? "…" : ""}”. 아래 다음 액션부터 이어서 정리해 보세요.`;
   } else {
-    coachText = `미션 「${assignment.title}」 현재 ${progressPct}%예요. 성공 기준 ${criteriaDone}/${criteriaTotal} 완료, 가이드 실천 ${practicedGuideCount}건. 아래 다음 액션부터 하나씩 체크해 보세요.`;
+    coachText = `미션 「${assignment.title}」 현재 ${progressPct}%예요. ${deliverableLine} 가이드 실천 ${practicedGuideCount}건. 아래 다음 액션부터 하나씩 체크해 보세요.`;
+  }
+
+  if (artifactCount === 0) {
+    nextActions.unshift("PDF·워드·텍스트 등 결과물을 첨부해 다시 제출하기");
   }
 
   const forNewhire: MissionFeedbackForNewhire = {
@@ -120,17 +135,21 @@ export function generateMissionFeedback(
     nextActions: nextActions.slice(0, 3),
   };
 
-  // HR channel: aggregates only — never echo private notes.
+  // HR channel: aggregates only — never echo private notes or file text.
+  const deliverableAgg =
+    artifactCount > 0
+      ? `결과물 ${artifactCount}건 제출됨`
+      : "결과물 미제출";
   let summary: string;
   let interventionHint: string;
   if (riskLevel === "alert") {
-    summary = `${assignment.week}주차 미션 「${assignment.title}」 진행 ${progressPct}%. 성공 기준 ${criteriaDone}/${criteriaTotal}, 가이드 실천 ${practicedGuideCount}건. 지연·저참여 신호가 있습니다.`;
+    summary = `${assignment.week}주차 미션 「${assignment.title}」 진행 ${progressPct}%. 가이드 실천 ${practicedGuideCount}건, ${deliverableAgg}. 지연·저참여 신호가 있습니다.`;
     interventionHint = "이번 주 안에 버디·멘토 1:1 체크인을 잡아보세요.";
   } else if (riskLevel === "watch") {
-    summary = `${assignment.week}주차 미션 「${assignment.title}」 진행 ${progressPct}%. 성공 기준 ${criteriaDone}/${criteriaTotal}, 가이드 실천 ${practicedGuideCount}건. 회복 여부를 지켜볼 단계입니다.`;
-    interventionHint = "다음 체크인에서 진행이 회복되는지 가볍게 확인해 주세요.";
+    summary = `${assignment.week}주차 미션 「${assignment.title}」 진행 ${progressPct}%. 가이드 실천 ${practicedGuideCount}건, ${deliverableAgg}. 회복 여부를 지켜볼 단계입니다.`;
+    interventionHint = "다음 제출에서 진행이 회복되는지 가볍게 확인해 주세요.";
   } else {
-    summary = `${assignment.week}주차 미션 「${assignment.title}」 진행 ${progressPct}%. 성공 기준 ${criteriaDone}/${criteriaTotal}, 가이드 실천 ${practicedGuideCount}건. 안정적 수행 흐름입니다.`;
+    summary = `${assignment.week}주차 미션 「${assignment.title}」 진행 ${progressPct}%. 가이드 실천 ${practicedGuideCount}건, ${deliverableAgg}. 안정적 수행 흐름입니다.`;
     interventionHint = "특별한 개입 없이 현재 흐름을 유지해도 좋아요.";
   }
 
@@ -139,8 +158,7 @@ export function generateMissionFeedback(
     progressPct,
     riskLevel,
     interventionHint,
-    criteriaDone,
-    criteriaTotal,
+    artifactCount,
     practicedGuideCount,
   };
 
@@ -166,18 +184,15 @@ export function evaluateSimulatorAnswer(
   return `${baseFeedback} 특히 근거를 구체적으로 서술해주셔서 이 선택은 신뢰도 높은 핵심가치 근거로 기록됐어요.`;
 }
 
-const DEFAULT_DNA_FALLBACK: DNAId[] = ["curiosity", "ownership", "results", "data"];
+const DEFAULT_DNA_FALLBACK: DNAId[] = [
+  "curiosity",
+  "growth_drive",
+  "result_excellence",
+];
 
 /**
- * Context Checklist Agent — reads today's actual task in free text and
- * narrows the 12 DNA values down to the 3~4 that are genuinely relevant,
- * then samples a short do-today action list from those values only.
- *
- * This replaces the old pattern of asking new hires to self-check all 12
- * values on every task (Form Fatigue → formal, meaningless checkbox
- * culture). In production this scoring would be a single LLM call over
- * the task text + this week's mission context; the keyword scoring below
- * is a deterministic stand-in so the demo behaves consistently offline.
+ * Context Checklist Agent — ranks the 12 core values for today's task,
+ * keeps the top 3, and returns exactly 3 checklist tips (one per value).
  */
 export function analyzeTaskContext(
   taskText: string,
@@ -197,14 +212,17 @@ export function analyzeTaskContext(
     string[]
   ][]) {
     const hits = keywords.filter((k) => normalized.includes(k.toLowerCase()));
-    if (hits.length > 0) {
-      scored.push({ dnaId, score: hits.length });
+    let score = hits.length;
+    // Mission focus DNA get a small boost when relevant to the assigned week.
+    if (weekFallbackDna.includes(dnaId)) score += 0.5;
+    if (score > 0) {
+      scored.push({ dnaId, score });
       matchedKeywords.push(...hits);
     }
   }
 
   scored.sort((a, b) => b.score - a.score);
-  const keywordDnaIds: DNAId[] = scored.slice(0, 4).map((s) => s.dnaId);
+  const keywordDnaIds: DNAId[] = scored.slice(0, 3).map((s) => s.dnaId);
   const relevantDnaIds: DNAId[] = [...keywordDnaIds];
 
   const fillerDnaIds: DNAId[] = [];
@@ -218,7 +236,7 @@ export function analyzeTaskContext(
       }
     }
   }
-  relevantDnaIds.splice(4);
+  relevantDnaIds.splice(3);
 
   const shortLabel = (id: DNAId) => DNA_MAP.get(id)?.shortLabel ?? id;
   const uniqueKeywords = Array.from(new Set(matchedKeywords)).slice(0, 5);
@@ -227,34 +245,28 @@ export function analyzeTaskContext(
   if (keywordDnaIds.length > 0 && fillerDnaIds.length === 0) {
     rationale = `입력하신 업무에서 "${uniqueKeywords.join(
       ", "
-    )}" 키워드가 감지돼서 ${relevantDnaIds
-      .map(shortLabel)
-      .join(", ")} 핵심가치와 가장 관련이 높다고 판단했어요. 나머지 핵심가치는 오늘 굳이 체크하지 않아도 괜찮아요.`;
-  } else if (keywordDnaIds.length > 0 && fillerDnaIds.length > 0) {
-    rationale = `"${uniqueKeywords.join(", ")}" 키워드로 ${keywordDnaIds
+    )}" 신호가 강해 ${relevantDnaIds
       .map(shortLabel)
       .join(
         ", "
-      )} 핵심가치를 감지했고, 관련 신호가 조금 더 필요해서 이번 주 미션 초점인 ${fillerDnaIds
+      )} 핵심가치 3가지를 우선순위로 골랐어요. 오늘은 이 3개만 체크하면 됩니다.`;
+  } else if (keywordDnaIds.length > 0 && fillerDnaIds.length > 0) {
+    rationale = `"${uniqueKeywords.join(", ")}" 신호로 ${keywordDnaIds
       .map(shortLabel)
-      .join(", ")}도 함께 추천에 포함했어요.`;
+      .join(", ")}를 뽑았고, 부족분은 미션 초점 ${fillerDnaIds
+      .map(shortLabel)
+      .join(", ")}로 채워 총 3개 체크리스트를 만들었어요.`;
   } else {
-    rationale = `구체적인 업무 키워드가 뚜렷하게 감지되지 않아, 이번 주 미션 초점(${relevantDnaIds
+    rationale = `뚜렷한 업무 키워드가 없어 이번 주 미션 초점(${relevantDnaIds
       .map(shortLabel)
-      .join(", ")})을 기준으로 추천했어요.`;
+      .join(", ")}) 기준으로 가장 중요한 3가지만 제시했어요.`;
   }
 
-  const guides: ActionGuide[] = [];
-  const perDnaGuides = relevantDnaIds.map(
-    (id) => ACTION_GUIDES_BY_DNA.get(id) ?? []
-  );
-  const maxLen = Math.max(0, ...perDnaGuides.map((g) => g.length));
-  for (let round = 0; round < maxLen && guides.length < 10; round++) {
-    for (const list of perDnaGuides) {
-      if (guides.length >= 10) break;
-      if (list[round]) guides.push(list[round]);
-    }
-  }
+  // Exactly one tip per selected DNA → 3 checklist items.
+  const guides: ActionGuide[] = relevantDnaIds
+    .map((id) => ACTION_GUIDES_BY_DNA.get(id)?.[0])
+    .filter((g): g is ActionGuide => Boolean(g))
+    .slice(0, 3);
 
   return { relevantDnaIds, matchedKeywords: uniqueKeywords, rationale, guides };
 }
@@ -287,56 +299,56 @@ export function matchFAQ(question: string): {
 }
 
 const OKR_TEMPLATES: Record<DNAId, { objective: string; kr: string[] }> = {
-  curiosity: {
-    objective: "현장 이슈에 대한 탐구를 습관화한다",
+  goal_sense: {
+    objective: "조직 목표와 연결된 정량 목표를 세운다",
     kr: [
-      "주간 이상 패턴 로그 3건 이상 스스로 분석",
-      "가설-검증 기록을 미션 체크인에 남기기",
+      "선행·후행 지표를 포함한 주간 목표 카드 1건",
+      "목표 대비 진행률을 수치로 공유 2회",
     ],
   },
-  challenge: {
-    objective: "불확실한 목표에도 실행 계획을 먼저 제시한다",
-    kr: ["애매한 요구사항 1건을 스스로 구조화해 팀에 공유", "도전적 목표의 첫 마일스톤 제안 1건"],
+  time_mastery: {
+    objective: "자동화로 시간을 확보하고 마감을 지킨다",
+    kr: ["반복 업무 자동화/툴 적용 1건", "마감 준수율 100% 유지"],
   },
-  field: {
-    objective: "현장의 실제 작동성을 기준으로 판단한다",
-    kr: ["현장 시나리오 미션 완료율 90% 이상 유지", "현장 이슈 원인 분석 노트 1건"],
+  grit: {
+    objective: "실패를 학습으로 바꿔 끝까지 해결한다",
+    kr: ["실패-재시도 기록 2건", "난이도 높은 과제 완결 1건"],
   },
-  ownership: {
-    objective: "담당 범위를 넘어서도 문제를 끝까지 책임진다",
-    kr: ["담당 외 이슈 1건 이상 자발적으로 해결", "미완료 항목 없이 주간 미션 마감"],
+  value_solve: {
+    objective: "고객·시장 관점에서 문제 본질을 푼다",
+    kr: ["문제 재정의 메모 1건", "구조적 해결 제안 1건"],
   },
-  data: {
-    objective: "감이 아닌 데이터로 판단하고 설득한다",
-    kr: ["의사결정에 데이터 근거를 명시한 사례 2건", "리포트 1건 이상 작성"],
+  critical_thinking: {
+    objective: "데이터로 기존 방식을 비판적으로 개선한다",
+    kr: ["데이터 근거 의사결정 사례 2건", "대안 전략 비교 노트 1건"],
   },
-  speed: {
-    objective: "빠른 시도와 빠른 보정을 반복한다",
-    kr: ["초안 제출 후 1회 이상 개선 반영", "미션 평균 제출 리드타임 단축"],
+  innovation_accel: {
+    objective: "AI·새 기술로 프로세스를 가속한다",
+    kr: ["업무 AI/툴 적용 사례 2건", "프로세스 개선 제안 1건"],
   },
-  candor: {
-    objective: "필요한 말을 존중을 담아 직접 전한다",
-    kr: ["동료 피드백 1건 이상 직접 전달", "받은 피드백에 대한 반영 기록 1건"],
+  result_excellence: {
+    objective: "결과물의 완성도와 품질을 최고 수준으로 유지한다",
+    kr: ["완결 산출물 2건 이상 제출", "품질 체크리스트 준수율 기록"],
   },
-  trust: {
-    objective: "동료와의 협업 신뢰를 쌓는다",
-    kr: ["버디 피드백 루프 2회 이상 완료", "크로스팀 협업 미션 1건 참여"],
+  growth_drive: {
+    objective: "일의 의미를 이해하고 스스로 성장을 주도한다",
+    kr: ["학습→실무 적용 사례 2건", "자발적 개선 과제 1건"],
   },
-  customer: {
-    objective: "기술을 현장의 언어로 옮긴다",
-    kr: ["고객向 문서 1건 이상 현장 언어로 정리", "현장 인터뷰 노트 1건"],
+  optimistic_challenge: {
+    objective: "변화 속에서도 낙관적으로 도전을 이어간다",
+    kr: ["도전 과제 첫 실행 스텝 제안 2건", "팀에 긍정적 공유 1건"],
   },
-  global: {
-    objective: "국내 기준을 넘어 글로벌 표준을 참고한다",
-    kr: ["해외 사례/표준 비교 노트 1건", "관련 자료 리서치 1건 공유"],
+  growth_feedback: {
+    objective: "성장지향 피드백을 주고받는다",
+    kr: ["피드백 전달 2건", "피드백 반영 기록 1건"],
   },
-  reframe: {
-    objective: "주어진 문제를 더 나은 질문으로 재정의한다",
-    kr: ["문제 재정의 제안 1건 이상 팀에 공유", "대안 관점 노트 1건"],
+  strategic_network: {
+    objective: "신뢰 기반 네트워크로 시너지를 만든다",
+    kr: ["이해관계자 정렬 미팅/공유 2회", "크로스팀 협업 1건"],
   },
-  results: {
-    objective: "산출물과 성과로 실력을 증명한다",
-    kr: ["완결된 산출물 1건 이상 제출", "성과 요약 노트 1건 작성"],
+  curiosity: {
+    objective: "호기심으로 학습하고 실무에 적용한다",
+    kr: ["심층 질문·리서치 기록 3건", "학습 적용 사례 2건"],
   },
 };
 
@@ -355,7 +367,7 @@ export function draftOKRFromEvidence(
   const topDna: DNAId[] =
     ranked.length > 0
       ? ranked.slice(0, 2).map(([id]) => id)
-      : (["curiosity", "ownership"] as DNAId[]);
+      : (["curiosity", "growth_drive"] as DNAId[]);
 
   const objectives: OKRObjective[] = topDna.map((dnaId) => {
     const template = OKR_TEMPLATES[dnaId];
@@ -544,7 +556,7 @@ export function answerBuddyQuestion(
     return [
       "인터엑스 12가지 핵심가치는 암기용이 아니라 **오늘 업무에 필요한 것만** 실천하면 돼요.",
       "",
-      "AI 버디 > **AI 업무 가이드**에 오늘 할 일을 적으면 관련 핵심가치 3~4개와 실천 가이드 10선을 추천해드려요.",
+      "온보딩 여정 > **미션 수행**에서 실천 체크를 하면 중요도 높은 핵심가치 **3가지**와 체크리스트 **3개**만 추천해드려요.",
       "",
       "- 예: `백엔드 API 자동화 스크립트 작성`",
     ].join("\n");

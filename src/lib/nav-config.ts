@@ -6,6 +6,8 @@ export type NavChild = {
   hint?: string;
   hrOnly?: boolean;
   newhireOnly?: boolean;
+  /** Shown under “더보기” in section side nav to reduce primary choice count. */
+  secondary?: boolean;
 };
 
 export type TopNavItem = {
@@ -31,24 +33,9 @@ export const TOP_NAV: TopNavItem[] = [
     label: "온보딩 여정",
     children: [
       {
-        href: "/journey/okr",
-        label: "월간 OKR",
-        hint: "목표·초안",
-      },
-      {
-        href: "/journey/checklist",
-        label: "30-60-90 체크리스트",
-        hint: "단계별 할 일",
-      },
-      {
-        href: "/journey/timeline",
-        label: "캘린더",
-        hint: "일정·이벤트",
-      },
-      {
         href: "/journey/missions",
-        label: "미션",
-        hint: "맞춤 미션 수행",
+        label: "미션 수행",
+        hint: "가이드·결과물·피드백",
         newhireOnly: true,
       },
       {
@@ -58,10 +45,21 @@ export const TOP_NAV: TopNavItem[] = [
         hrOnly: true,
       },
       {
-        href: "/journey/guide",
-        label: "AI 업무 가이드",
-        hint: "미션 수행 코치",
-        newhireOnly: true,
+        href: "/journey/okr",
+        label: "월간 OKR",
+        hint: "목표·초안",
+      },
+      {
+        href: "/journey/timeline",
+        label: "캘린더",
+        hint: "일정·이벤트",
+        secondary: true,
+      },
+      {
+        href: "/journey/checklist",
+        label: "30-60-90 체크리스트",
+        hint: "단계별 할 일",
+        secondary: true,
       },
     ],
   },
@@ -140,6 +138,7 @@ export function sectionSideNav(
 export function sectionDefaultHref(sectionHref: string, role: UserRole): string {
   if (sectionHref === "/") return "/";
   const kids = sectionSideNav(sectionHref, role);
-  if (kids.length > 0) return kids[0].href;
+  const primary = kids.find((k) => !k.secondary) ?? kids[0];
+  if (primary) return primary.href;
   return sectionHref;
 }

@@ -42,168 +42,305 @@ export const TEAM_TO_EMPLOYEE_ID: Record<DeptTeam, string> = {
 
 export const DNA_VALUES: DNAValue[] = [
   {
+    id: "goal_sense",
+    label: "선도적/정량 목표의식",
+    shortLabel: "정량목표",
+    emoji: "🎯",
+    description:
+      "조직의 목표와 연결된 도전적인 목표를 설정하고, 선행·후행 지표를 수치화하여 목표 달성 과정을 체계적으로 관리합니다.",
+  },
+  {
+    id: "time_mastery",
+    label: "초효율적 시간관리",
+    shortLabel: "시간관리",
+    emoji: "⏰",
+    description:
+      "AI 등 다양한 도구와 리소스를 적극 활용하여 업무를 자동화/효율화하고, 확보한 시간을 더 높은 가치의 업무에 집중하며 마감기한을 준수합니다.",
+  },
+  {
+    id: "grit",
+    label: "집요한 끈기",
+    shortLabel: "끈기",
+    emoji: "💪",
+    description:
+      "실패를 통해 빠르게 배우고 전략을 수정하며 반복적으로 실행합니다. 어려운 과제나 불확실한 상황에서도 끝까지 해결책을 찾아냅니다.",
+  },
+  {
+    id: "value_solve",
+    label: "가치중심적 문제해결",
+    shortLabel: "문제해결",
+    emoji: "💡",
+    description:
+      "고객과 시장에 대한 깊은 이해를 바탕으로 문제의 본질을 파악하고, 단기적인 해결이 아닌 조직 차원의 구조적인 해결방안을 고민합니다.",
+  },
+  {
+    id: "critical_thinking",
+    label: "근본적 비판 사고",
+    shortLabel: "비판사고",
+    emoji: "🧠",
+    description:
+      "수치와 데이터를 근거로 기존 방식과 경험을 비판적으로 돌아보고, 더 나은 전략과 근본적인 대안을 도출합니다.",
+  },
+  {
+    id: "innovation_accel",
+    label: "혁신 프로세스 가속화",
+    shortLabel: "혁신가속",
+    emoji: "🤖",
+    description:
+      "AI와 새로운 기술을 적극 활용하여 업무 방식을 개선하고, 더 효율적인 프로세스를 제안하며 동료들과 함께 발전시켜 나갑니다.",
+  },
+  {
+    id: "result_excellence",
+    label: "최고수준의 결과지향",
+    shortLabel: "결과지향",
+    emoji: "🏆",
+    description:
+      "반복적인 실수를 줄이고 높은 품질을 지속적으로 유지합니다. 맡은 결과물 하나하나에 최고 수준의 완성도와 전문성을 추구합니다.",
+  },
+  {
+    id: "growth_drive",
+    label: "자발적 성장동기",
+    shortLabel: "성장동기",
+    emoji: "📈",
+    description:
+      "자신의 일의 의미와 가치를 이해하고, 강박적 호기심을 바탕으로 스스로 성장하며 업무를 주도합니다.",
+  },
+  {
+    id: "optimistic_challenge",
+    label: "미래낙관적 도전",
+    shortLabel: "낙관도전",
+    emoji: "🌈",
+    description:
+      "예상치 못한 변화와 어려움 속에서도 낙천적인 태도를 유지합니다. 더 나은 미래를 믿고 새로운 도전을 이어가며 주변에도 긍정적인 에너지를 전합니다.",
+  },
+  {
+    id: "growth_feedback",
+    label: "성장지향 피드백",
+    shortLabel: "피드백",
+    emoji: "💬",
+    description:
+      "피드백을 적극적으로 주고받으며, 열린 마음으로 수용하고 감사함을 표현합니다. 이를 통해 함께 성장하는 솔직한 소통 문화를 만들어갑니다.",
+  },
+  {
+    id: "strategic_network",
+    label: "관계기반 전략소통",
+    shortLabel: "전략소통",
+    emoji: "🤝",
+    description:
+      "내·외부 이해관계자와 신뢰를 바탕으로 전략적 네트워크를 형성하며, 더 큰 시너지를 통한 새로운 기회를 창출합니다.",
+  },
+  {
     id: "curiosity",
     label: "강박적 호기심",
     shortLabel: "호기심",
-    description: "정답이 없는 상황에서도 스스로 파고들어 원인을 캐낸다.",
-  },
-  {
-    id: "challenge",
-    label: "미래를 낙관하는 도전",
-    shortLabel: "도전",
-    description: "불확실하고 어려운 목표 앞에서도 가능성을 먼저 본다.",
-  },
-  {
-    id: "field",
-    label: "현장 중심 실행",
-    shortLabel: "현장실행",
-    description: "책상 위 이론보다 현장의 실제 작동성을 우선한다.",
-  },
-  {
-    id: "ownership",
-    label: "주인의식",
-    shortLabel: "오너십",
-    description: "내 일이 아니어도 문제를 발견하면 끝까지 책임진다.",
-  },
-  {
-    id: "data",
-    label: "데이터로 증명하기",
-    shortLabel: "데이터",
-    description: "감이 아니라 근거와 수치로 판단하고 설득한다.",
-  },
-  {
-    id: "speed",
-    label: "빠른 실행, 빠른 학습",
-    shortLabel: "실행속도",
-    description: "완벽한 계획보다 빠른 시도와 보정을 택한다.",
-  },
-  {
-    id: "candor",
-    label: "솔직한 피드백",
-    shortLabel: "솔직함",
-    description: "불편해도 필요한 말을 존중을 담아 직접 전한다.",
-  },
-  {
-    id: "trust",
-    label: "협업의 신뢰",
-    shortLabel: "협업신뢰",
-    description: "동료의 전문성을 믿고 기꺼이 도움을 주고받는다.",
-  },
-  {
-    id: "customer",
-    label: "고객 현장의 언어",
-    shortLabel: "고객언어",
-    description: "기술을 고객과 현장이 이해할 수 있는 말로 옮긴다.",
-  },
-  {
-    id: "global",
-    label: "글로벌 스탠다드",
-    shortLabel: "글로벌",
-    description: "국내 기준에 머물지 않고 세계 표준을 목표로 삼는다.",
-  },
-  {
-    id: "reframe",
-    label: "문제를 재정의하는 힘",
-    shortLabel: "재정의력",
-    description: "주어진 문제를 그대로 풀기보다 더 나은 질문으로 바꾼다.",
-  },
-  {
-    id: "results",
-    label: "결과로 증명하는 실력",
-    shortLabel: "결과입증",
-    description: "말이 아니라 산출물과 성과로 실력을 보여준다.",
+    emoji: "🔍",
+    description:
+      "새로운 분야에도 호기심을 가지고 끊임없이 질문하고 학습하며, 배운 내용을 실무에 적극 적용해 더 나은 방법을 찾아갑니다.",
   },
 ];
 
 export const DNA_MAP = new Map(DNA_VALUES.map((d) => [d.id, d]));
 
 /**
- * Context Checklist Agent — keyword signals used to simulate an LLM reading
- * "오늘 할 일" free text and tagging which DNA values are actually relevant
- * to that task. This is what lets the portal recommend 3~4 values instead
- * of asking new hires to check all 12 every day (Form Fatigue).
+ * Keyword signals for ranking which of the 12 values matter most to today's
+ * task. The AI work guide then keeps only the top 3 as a short checklist.
  */
 export const DNA_KEYWORDS: Record<DNAId, string[]> = {
-  curiosity: ["원인", "이상", "로그", "왜", "조사", "리서치", "탐구", "버그", "디버깅", "가설"],
-  challenge: ["신규", "새로운", "처음", "도전", "목표", "스트레치", "어려운", "불확실", "런칭"],
-  field: ["현장", "설비", "라인", "공정", "배포", "운영", "테스트베드", "실기기", "api", "백엔드", "구현"],
-  ownership: ["담당", "책임", "마무리", "끝까지", "오너", "전담", "마감"],
-  data: ["데이터", "지표", "수치", "통계", "리포트", "대시보드", "sql", "분석"],
-  speed: ["자동화", "스크립트", "빠르게", "신속", "단축", "효율", "파이프라인", "배치작업"],
-  candor: ["피드백", "코드리뷰", "리뷰", "의견", "지적", "커뮤니케이션"],
-  trust: ["협업", "공유", "크로스팀", "페어", "회의", "동료", "지원요청"],
-  customer: ["고객", "클라이언트", "발표", "보고서", "매뉴얼", "문서화"],
-  global: ["해외", "글로벌", "영어", "표준", "벤치마크"],
-  reframe: ["재정의", "요구사항", "기획", "문제정의", "구조화", "새관점"],
-  results: ["완료", "산출물", "성과", "마일스톤", "제출", "릴리즈", "개발"],
+  goal_sense: [
+    "목표",
+    "okr",
+    "kpi",
+    "지표",
+    "수치",
+    "마일스톤",
+    "달성",
+    "선행",
+    "후행",
+    "정량",
+  ],
+  time_mastery: [
+    "마감",
+    "시간",
+    "효율",
+    "자동화",
+    "스케줄",
+    "우선순위",
+    "빠르게",
+    "단축",
+    "캘린더",
+  ],
+  grit: [
+    "실패",
+    "재시도",
+    "끈기",
+    "어려운",
+    "막힘",
+    "끝까지",
+    "반복",
+    "불확실",
+    "해결",
+  ],
+  value_solve: [
+    "문제",
+    "본질",
+    "고객",
+    "시장",
+    "구조",
+    "원인",
+    "현장",
+    "요구사항",
+    "페인",
+  ],
+  critical_thinking: [
+    "데이터",
+    "분석",
+    "비판",
+    "근거",
+    "가설",
+    "검증",
+    "리포트",
+    "로그",
+    "sql",
+    "대시보드",
+  ],
+  innovation_accel: [
+    "ai",
+    "자동화",
+    "프로세스",
+    "혁신",
+    "개선",
+    "툴",
+    "도구",
+    "워크플로",
+    "스크립트",
+  ],
+  result_excellence: [
+    "품질",
+    "완성도",
+    "산출물",
+    "제출",
+    "릴리즈",
+    "완료",
+    "리뷰",
+    "완성",
+    "디테일",
+  ],
+  growth_drive: [
+    "성장",
+    "학습",
+    "주도",
+    "의미",
+    "스스로",
+    "오너",
+    "담당",
+    "스터디",
+    "성장동기",
+  ],
+  optimistic_challenge: [
+    "도전",
+    "신규",
+    "처음",
+    "런칭",
+    "변화",
+    "낙관",
+    "스트레치",
+    "새로운",
+  ],
+  growth_feedback: [
+    "피드백",
+    "코드리뷰",
+    "의견",
+    "리뷰",
+    "소통",
+    "전달",
+    "감사",
+    "수용",
+  ],
+  strategic_network: [
+    "협업",
+    "네트워크",
+    "이해관계",
+    "크로스팀",
+    "회의",
+    "동료",
+    "공유",
+    "관계",
+    "시너지",
+  ],
+  curiosity: [
+    "호기심",
+    "왜",
+    "질문",
+    "리서치",
+    "탐구",
+    "배우",
+    "조사",
+    "디버깅",
+    "학습",
+  ],
 };
 
-/**
- * 12 DNA × 3 concrete "오늘 실천 가이드" lines — a small library the
- * Context Checklist Agent samples from once it knows which 3~4 DNA are
- * relevant to today's task. Deliberately short and action-first so they
- * read like a to-do, not a value statement to memorize.
- */
+/** One primary action tip per DNA — AI work guide picks top 3 DNAs → 3 tips. */
 const ACTION_GUIDE_LIBRARY: Record<DNAId, string[]> = {
+  goal_sense: [
+    "오늘 업무를 조직 목표와 연결해 선행·후행 지표 1개씩 적어보기",
+    "이번 주 도전 목표를 수치로 바꿔 팀에 공유하기",
+    "목표 대비 현재 진행을 %로 한 줄 점검하기",
+  ],
+  time_mastery: [
+    "반복 업무 1개를 AI·자동화로 줄이고 확보 시간을 기록하기",
+    "오늘 할 일 중 고가치 업무를 맨 앞에 두고 마감 시간을 고정하기",
+    "마감 전 버퍼 30분을 캘린더에 막아두기",
+  ],
+  grit: [
+    "막힌 지점에서 실패 원인 1개를 적고 다음 시도 계획을 세우기",
+    "같은 문제를 다른 전략으로 한 번 더 실행해보기",
+    "불확실한 과제의 '다음 최소 실행'을 오늘 안에 끝내기",
+  ],
+  value_solve: [
+    "고객·현장이 겪는 문제로 오늘의 과제를 한 문장 재정의하기",
+    "단기 패치가 아닌 구조적 원인 가설을 1개 남기기",
+    "해결안이 조직 어디에 영향을 주는지 이해관계자 관점으로 점검하기",
+  ],
+  critical_thinking: [
+    "감이 아닌 수치·로그 근거 1개를 붙여 판단 기록하기",
+    "기존 방식이 최선인지 반박 질문 1개를 팀에 던져보기",
+    "대안 전략을 데이터로 비교해 한 줄 결론 내기",
+  ],
+  innovation_accel: [
+    "오늘 업무에 AI/새 툴을 1곳 적용해 시간 절감을 재보기",
+    "더 나은 프로세스를 동료에게 짧게 제안하기",
+    "자동화 가능한 단계를 체크리스트로 분리하기",
+  ],
+  result_excellence: [
+    "제출 전 완성도 체크(오타·엣지케이스·재현) 3항목 점검하기",
+    "반복 실수 패턴 1개를 적어 같은 실수 방지 장치 만들기",
+    "결과물을 '완료 정의'에 맞춰 한 번 더 다듬어 공유하기",
+  ],
+  growth_drive: [
+    "이 일이 나에게 주는 의미·성장 포인트를 한 줄로 쓰기",
+    "오늘 새로 배운 것을 실무에 바로 적용한 사례 남기기",
+    "다음으로 주도할 작은 개선 1건을 스스로 잡기",
+  ],
+  optimistic_challenge: [
+    "어려운 변화 앞에서도 가능한 첫 스텝을 낙관적으로 제안하기",
+    "주변 동료에게 긍정적 에너지가 되는 한 줄 응원·공유하기",
+    "'안 될 것 같다'는 순간에 대안 시나리오 1개를 적기",
+  ],
+  growth_feedback: [
+    "동료에게 구체적 피드백 1건을 오늘 안에 전달하기",
+    "받은 피드백에 감사와 반영 계획을 짧게 회신하기",
+    "불편하지만 성장에 필요한 의견을 존중을 담아 말하기",
+  ],
+  strategic_network: [
+    "관련 이해관계자 1명에게 맥락을 공유하고 도움을 요청하기",
+    "크로스팀 관점을 묻기 위한 짧은 질문 1개를 남기기",
+    "협업으로 시너지가 날 지점을 한 줄로 제안하기",
+  ],
   curiosity: [
-    "막힌 부분의 원인을 3단계 이상 파고든 뒤 결론을 한 줄 남기기",
-    "'왜 이렇게 됐지?' 질문을 팀 채널에 공유해보기",
-    "레퍼런스 코드·문서를 1개 더 찾아 비교해보기",
-  ],
-  challenge: [
-    "오늘 목표 중 가장 불확실한 부분의 첫 실행 스텝을 먼저 제안하기",
-    "'안 될 것 같다'는 생각이 들 때 가능한 대안 1개를 적어보기",
-    "이번 작업의 성공 기준을 스스로 한 문장으로 정의해보기",
-  ],
-  field: [
-    "실제 환경·실기기에서 한 번 더 동작을 확인하기",
-    "이론상 맞아도 실제 로그·결과값으로 검증하기",
-    "이 기능이 현장에서 실패하면 무슨 일이 생기는지 적어보기",
-  ],
-  ownership: [
-    "담당 범위가 애매한 이슈를 발견하면 먼저 이름 붙여 등록하기",
-    "끝까지 확인하지 않은 작업이 있다면 오늘 마무리하기",
-    "내가 만든 결과물에 '이건 제가 책임질게요' 한 줄 남기기",
-  ],
-  data: [
-    "판단 근거가 될 숫자·로그를 1개 캡처해서 남기기",
-    "감으로 말하기 전에 실제 수치를 1번 확인하기",
-    "결과를 공유할 때 근거 데이터를 함께 첨부하기",
-  ],
-  speed: [
-    "완벽한 버전 대신 동작하는 초안을 먼저 만들어 공유하기",
-    "반복 작업 1개를 자동화 스크립트로 줄여보기",
-    "오늘 만든 결과물을 바로 테스트해 피드백 루프 1회 돌리기",
-  ],
-  candor: [
-    "동료 결과물에서 발견한 이슈를 오늘 안에 직접 전달하기",
-    "받은 피드백 중 하나를 실제로 반영해보기",
-    "불편하지만 필요한 의견을 존중을 담아 한 문장으로 정리해 말하기",
-  ],
-  trust: [
-    "혼자 붙잡고 있던 문제를 동료에게 공유하고 도움을 요청하기",
-    "다른 팀·역할의 관점을 1번 물어보기",
-    "동료의 작업을 리뷰하며 잘한 점을 먼저 짚어주기",
-  ],
-  customer: [
-    "오늘 작업을 고객·현장 담당자가 이해할 말로 한 줄 정리하기",
-    "기술 용어 대신 사용자가 겪는 문제로 바꿔 설명해보기",
-    "실제 사용 장면을 상상하며 결과물을 한 번 더 점검하기",
-  ],
-  global: [
-    "해외 사례나 표준 문서를 1개 참고해보기",
-    "국내 기준 대신 글로벌 벤치마크와 비교해보기",
-    "영어 자료·레퍼런스를 1개 이상 확인해보기",
-  ],
-  reframe: [
-    "주어진 요구사항을 '진짜 원하는 게 뭘까'로 다시 질문해보기",
-    "같은 문제를 다른 팀이라면 어떻게 풀지 생각해보기",
-    "오늘 받은 요청 중 1개를 더 나은 질문으로 바꿔 제안하기",
-  ],
-  results: [
-    "오늘 안에 눈에 보이는 산출물 1개를 완결하기",
-    "진행 중이라는 말 대신 완료된 부분을 명확히 구분해 공유하기",
-    "작업을 마친 뒤 결과를 한 줄 요약으로 남기기",
+    "'왜?' 질문을 3번 이어가며 원인을 파고든 뒤 결론 남기기",
+    "새로운 자료·레퍼런스 1개를 찾아 실무에 적용해보기",
+    "모르는 영역을 동료에게 호기심 있게 질문하기",
   ],
 };
 
@@ -224,58 +361,39 @@ export const ACTION_GUIDES_BY_DNA = new Map<DNAId, ActionGuide[]>(
   ])
 );
 
+/** AX 인턴 온보딩 미션 — 관찰→리서치→설계→검증 루프 */
 export const MISSION_TEMPLATES: MissionTemplate[] = [
   {
     id: "tpl-w1",
     week: 1,
-    title: "현장 시나리오, 첫 판단",
+    title: "부서 업무 관찰·인터뷰로 자동화 기회 찾기",
     description:
-      "Decision Simulator로 설비 이상 대응 시나리오를 수행하고, AI 업무 가이드로 오늘 판단 기준을 실천해 보세요.",
-    successCriteria: [
-      "Decision Simulator 시나리오 1회 완료",
-      "AI 업무 가이드 실천 2건 이상",
-      "판단 근거를 한 줄로 팀에 공유",
-    ],
-    dnaFocus: ["curiosity", "field"],
+      "사내 1개 부서(또는 담당자 2명 이상)를 관찰·인터뷰해 반복 업무·수작업·정보 탐색 병목을 정리하세요. 자동화·AI 에이전트로 줄일 수 있는 기회 3건을 우선순위와 함께 결과물로 제출합니다.",
+    dnaFocus: ["curiosity", "value_solve"],
   },
   {
     id: "tpl-w2",
     week: 2,
-    title: "불가능해 보이는 목표 마주하기",
+    title: "AI 도구 리서치·검증으로 활용 가이드 기여",
     description:
-      "도전적인 스프린트 목표를 가정하고 첫 마일스톤을 세운 뒤, AI 가이드로 실행 항목을 실천하세요.",
-    successCriteria: [
-      "첫 마일스톤 제안서(메모) 작성",
-      "AI 업무 가이드 실천 2건 이상",
-      "리스크·대안 경로 1줄씩 정리",
-    ],
-    dnaFocus: ["challenge", "speed"],
+      "1주차에서 고른 기회 중 1건에 쓸 최신 AI 도구·솔루션을 리서치하고, 작은 PoC로 적합성을 검증하세요. 전사 AI 활용 가이드라인에 넣을 권장/주의 포인트 초안을 결과물로 제출합니다.",
+    dnaFocus: ["innovation_accel", "critical_thinking"],
   },
   {
     id: "tpl-w3",
     week: 3,
-    title: "동료에게 솔직한 피드백 전하기",
+    title: "맞춤형 에이전트 기능정의서·와이어프레임",
     description:
-      "동료 피드백 1회를 수집·전달하고, AI 가이드로 존중 있는 전달 방식을 연습하세요.",
-    successCriteria: [
-      "동료 피드백 1회 전달 또는 요청",
-      "받은/준 피드백 반영 메모 작성",
-      "AI 업무 가이드 실천 2건 이상",
-    ],
-    dnaFocus: ["candor", "trust"],
+      "검증한 자동화 지점에 맞는 부서 맞춤 AI 에이전트(또는 봇)의 기능 정의서와 기초 와이어프레임을 작성하세요. 개발 일정·마일스톤·진척 체크 기준을 함께 붙여 결과물로 제출합니다.",
+    dnaFocus: ["goal_sense", "result_excellence"],
   },
   {
     id: "tpl-w4",
     week: 4,
-    title: "나의 성장 좌표 되돌아보기",
+    title: "사용자 테스트로 생산성 임팩트 검증",
     description:
-      "4주 미션 성과를 종합해 자주 보인 핵심가치와 다음 달 채울 핵심가치를 제안하세요.",
-    successCriteria: [
-      "4주 미션 진행률 요약 확인",
-      "핵심가치 Top 2 스스로 선정",
-      "다음 달 OKR 초안 1줄 제안",
-    ],
-    dnaFocus: ["ownership", "results"],
+      "대상 부서 사용자 1명 이상과 짧게 테스트해 실제 업무 적용 결과를 검증하세요. 개선 사항·다음 스프린트 액션·예상 생산성 효과를 정리한 회고를 결과물로 제출합니다.",
+    dnaFocus: ["growth_feedback", "time_mastery"],
   },
 ];
 
@@ -301,7 +419,7 @@ export const SCENARIOS: SimulatorScenario[] = [
       {
         id: "b",
         label: "선배에게 즉시 보고하고 판단을 맡긴다",
-        dnaId: "trust",
+        dnaId: "strategic_network",
         tone: "ok",
         feedback:
           "협업과 에스컬레이션은 좋은 습관이에요. 다만 먼저 짧게라도 스스로 가설을 세운 뒤 공유하면 호기심 핵심가치도 함께 보여줄 수 있어요.",
@@ -317,7 +435,7 @@ export const SCENARIOS: SimulatorScenario[] = [
       {
         id: "d",
         label: "정해진 절차대로 이슈 티켓만 등록한다",
-        dnaId: "field",
+        dnaId: "value_solve",
         tone: "ok",
         feedback:
           "절차 준수는 기본이지만, 티켓 등록에서 멈추지 않고 원인을 한 번 더 들여다보면 현장 실행력이 더 강하게 드러날 거예요.",
@@ -334,15 +452,15 @@ export const SCENARIOS: SimulatorScenario[] = [
       {
         id: "a",
         label: "목표는 유지하되, 첫 마일스톤을 스스로 제안해본다",
-        dnaId: "challenge",
+        dnaId: "optimistic_challenge",
         tone: "strong",
         feedback:
-          "미래를 낙관하는 도전 핵심가치가 잘 드러났어요. 불가능해 보이는 목표 앞에서 먼저 실행 가능한 첫걸음을 제시하는 태도가 인터엑스가 원하는 모습입니다.",
+          "미래낙관적 도전 핵심가치가 잘 드러났어요. 불가능해 보이는 목표 앞에서 먼저 실행 가능한 첫걸음을 제시하는 태도가 인터엑스가 원하는 모습입니다.",
       },
       {
         id: "b",
         label: "목표를 현실적인 수준으로 먼저 축소하자고 제안한다",
-        dnaId: "data",
+        dnaId: "critical_thinking",
         tone: "ok",
         feedback:
           "현실적인 조율도 필요하지만, 축소를 먼저 꺼내기보다 데이터로 리스크를 짚고 대안 경로를 함께 제시하면 더 좋은 인상을 줄 수 있어요.",
@@ -350,7 +468,7 @@ export const SCENARIOS: SimulatorScenario[] = [
       {
         id: "c",
         label: "일단 조용히 있다가 나중에 못했다고 보고한다",
-        dnaId: "challenge",
+        dnaId: "optimistic_challenge",
         tone: "risky",
         feedback:
           "회피는 신뢰를 떨어뜨릴 수 있어요. 지금 시점에 어렵다는 신호를 솔직하게 공유하는 것 자체가 도전의 시작입니다.",
@@ -358,7 +476,7 @@ export const SCENARIOS: SimulatorScenario[] = [
       {
         id: "d",
         label: "무리해서라도 원래 목표를 그대로 밀어붙이겠다고 한다",
-        dnaId: "speed",
+        dnaId: "time_mastery",
         tone: "ok",
         feedback:
           "의지는 좋지만, 근거 없는 밀어붙이기는 번아웃으로 이어질 수 있어요. 빠른 실행은 빠른 검증과 함께 가야 지속 가능합니다.",
@@ -375,15 +493,15 @@ export const SCENARIOS: SimulatorScenario[] = [
       {
         id: "a",
         label: "지금 조용히 따로 불러 사실과 대안을 함께 전한다",
-        dnaId: "candor",
+        dnaId: "growth_feedback",
         tone: "strong",
         feedback:
-          "솔직한 피드백 핵심가치가 잘 드러났어요. 불편할 수 있는 말을 존중을 담아 직접, 그리고 시간 안에 전달한 점이 훌륭합니다.",
+          "성장지향 피드백 핵심가치가 잘 드러났어요. 불편할 수 있는 말을 존중을 담아 직접, 그리고 시간 안에 전달한 점이 훌륭합니다.",
       },
       {
         id: "b",
         label: "발표를 망칠까 봐 일단 아무 말도 하지 않는다",
-        dnaId: "candor",
+        dnaId: "growth_feedback",
         tone: "risky",
         feedback:
           "침묵은 당장은 편하지만 동료에게도 팀에게도 도움이 되지 않아요. 지금처럼 애매한 순간에 말할 용기가 신뢰를 만듭니다.",
@@ -391,7 +509,7 @@ export const SCENARIOS: SimulatorScenario[] = [
       {
         id: "c",
         label: "발표가 끝난 뒤 다른 동료에게 그 실수에 대해 이야기한다",
-        dnaId: "trust",
+        dnaId: "strategic_network",
         tone: "risky",
         feedback:
           "본인에게 직접 전하지 않고 다른 사람에게 먼저 이야기하는 방식은 협업의 신뢰를 갉아먹을 수 있어요. 항상 본인에게 먼저입니다.",
@@ -399,7 +517,7 @@ export const SCENARIOS: SimulatorScenario[] = [
       {
         id: "d",
         label: "발표 중간에 다른 사람들 앞에서 바로 지적한다",
-        dnaId: "candor",
+        dnaId: "growth_feedback",
         tone: "ok",
         feedback:
           "솔직함은 좋지만 공개적인 지적은 상대를 방어적으로 만들 수 있어요. 같은 내용이라도 1:1로, 발표 전에 전하는 편이 더 효과적입니다.",
@@ -437,7 +555,7 @@ export const FAQS: FAQEntry[] = [
     id: "faq-dna",
     keywords: ["핵심가치", "DNA", "인재상"],
     answer:
-      "인터엑스는 12가지 핵심가치를 기준으로 성장 방향을 잡아요. 매일 12개를 다 체크할 필요는 없고, AI 버디의 업무 가이드가 오늘 할 일에 맞는 3~4개만 추천해줘요.",
+      "인터엑스는 12가지 핵심가치를 기준으로 성장 방향을 잡아요. 매일 12개를 다 체크할 필요는 없고, AI 업무 가이드가 오늘 할 일에 맞는 가장 중요한 3가지만 체크리스트로 추천해줘요.",
   },
   {
     id: "faq-buddy",
@@ -462,7 +580,7 @@ export const FAQS: FAQEntry[] = [
 export const SEED_EMPLOYEES: Employee[] = [
   {
     id: DEMO_EMPLOYEE_ID,
-    name: "김도윤",
+    name: "정예빈",
     dept: "AX팀",
     cohort: "2026년 하반기",
     joinDate: "2026-09-01",
@@ -539,7 +657,6 @@ export const SEED_MISSION_ASSIGNMENTS: MissionAssignment[] = [
     week: 3,
     title: MISSION_TEMPLATES[2].title,
     description: MISSION_TEMPLATES[2].description,
-    successCriteria: [...MISSION_TEMPLATES[2].successCriteria],
     dnaFocus: [...MISSION_TEMPLATES[2].dnaFocus],
     dueAt: "2026-08-08T18:00:00.000Z",
     status: "in_progress",
@@ -552,10 +669,10 @@ export const SEED_MISSION_ASSIGNMENTS: MissionAssignment[] = [
     employeeId: "emp-02",
     templateId: "tpl-w2",
     week: 2,
-    title: MISSION_TEMPLATES[1].title,
-    description: MISSION_TEMPLATES[1].description,
-    successCriteria: [...MISSION_TEMPLATES[1].successCriteria],
-    dnaFocus: [...MISSION_TEMPLATES[1].dnaFocus],
+    title: "스프린트 목표를 마일스톤으로 쪼개기",
+    description:
+      "이번 스프린트에서 불가능해 보이는 목표 1개를 골라 첫 마일스톤·리스크·대안 경로를 정리한 뒤 결과물로 제출하세요.",
+    dnaFocus: ["optimistic_challenge", "goal_sense"],
     dueAt: "2026-09-12T18:00:00.000Z",
     status: "awaiting_review",
     assignedAt: "2026-09-05T09:00:00.000Z",
@@ -569,13 +686,8 @@ export const SEED_MISSION_ASSIGNMENTS: MissionAssignment[] = [
     week: 3,
     title: "브랜드 메시지 피드백 루프",
     description:
-      "캠페인 방향이 바뀔 때 동료·매니저에게 피드백을 요청하고 반영 메모를 남기세요.",
-    successCriteria: [
-      "피드백 요청 1회 이상",
-      "반영 메모 작성",
-      "AI 업무 가이드 실천 1건",
-    ],
-    dnaFocus: ["candor", "trust"],
+      "캠페인 방향이 바뀔 때 동료·매니저에게 피드백을 요청하고 반영 메모를 결과물로 제출하세요.",
+    dnaFocus: ["growth_feedback", "strategic_network"],
     dueAt: "2026-05-10T18:00:00.000Z",
     status: "awaiting_review",
     assignedAt: "2026-05-01T09:00:00.000Z",
@@ -589,9 +701,20 @@ export const SEED_MISSION_CHECKINS: MissionCheckIn[] = [
     id: "chk-me-w3-1",
     assignmentId: "asg-me-w3",
     employeeId: DEMO_EMPLOYEE_ID,
-    doneCriteriaIds: ["0"],
-    privateNote: "피드백 요청이 아직 어색해서 문장을 어떻게 시작할지 막막해요.",
-    artifactNote: "슬랙 초안 작성 중",
+    privateNote:
+      "기능 범위를 어디까지 1차로 넣을지 고민 중이에요. 인터뷰에서 나온 요청이 많아서요.",
+    artifactNote: "기능정의서·와이어프레임 초안",
+    attachments: [
+      {
+        id: "att-me-w3-1",
+        name: "HR팀-온보딩FAQ-에이전트-기능정의-초안.txt",
+        mimeType: "text/plain",
+        size: 520,
+        kind: "text",
+        textContent:
+          "[대상] HR팀 온보딩 FAQ 응답 자동화\n[문제] 반복 FAQ 응대에 주 4시간 소요\n[에이전트 목표] 사내 FAQ·가이드 문서를 근거로 1차 답변 초안 생성\n[핵심 기능] 1) 질문 의도 분류 2) 문서 근거 인용 답변 3) 담당자 에스컬레이션\n[비범위] 연차 승인·급여 계산\n[일정] W1 인터뷰 정리 → W2 PoC → W3 기능정의/WF → W4 사용자 테스트\n[와이어프레임] 입력창 / 근거 카드 / ‘담당자 연결’ CTA",
+      },
+    ],
     guideSessionIds: [],
     createdAt: "2026-08-04T11:00:00.000Z",
   },
@@ -599,9 +722,18 @@ export const SEED_MISSION_CHECKINS: MissionCheckIn[] = [
     id: "chk-emp02-w2-1",
     assignmentId: "asg-emp02-w2",
     employeeId: "emp-02",
-    doneCriteriaIds: ["0", "2"],
     privateNote: "목표가 막막했지만 마일스톤으로 나눠보니 한결 나았어요.",
     artifactNote: "마일스톤 초안 Notion",
+    attachments: [
+      {
+        id: "att-emp02-w2-1",
+        name: "week2-milestones.docx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        size: 24576,
+        kind: "word",
+      },
+    ],
     guideSessionIds: [],
     createdAt: "2026-09-11T10:00:00.000Z",
   },
@@ -609,7 +741,6 @@ export const SEED_MISSION_CHECKINS: MissionCheckIn[] = [
     id: "chk-emp04-w3-1",
     assignmentId: "asg-emp04-w3",
     employeeId: "emp-04",
-    doneCriteriaIds: ["0"],
     privateNote: "방향이 자주 바뀌어 다시 물어보기가 눈치 보여요.",
     guideSessionIds: [],
     createdAt: "2026-05-09T11:00:00.000Z",
@@ -622,23 +753,22 @@ export const SEED_MISSION_FEEDBACKS: MissionFeedback[] = [
     assignmentId: "asg-emp02-w2",
     employeeId: "emp-02",
     week: 2,
-    missionTitle: MISSION_TEMPLATES[1].title,
+    missionTitle: "스프린트 목표를 마일스톤으로 쪼개기",
     forNewhire: {
       coachText:
-        "마일스톤을 나눠 첫걸음을 만든 점이 훌륭해요. 다음엔 AI 가이드 실천을 두 번만 더 체크하면 성공 기준에 더 가까워져요.",
+        "마일스톤 결과물을 제출한 점이 훌륭해요. 다음엔 실천 체크를 두 번만 더 하면 이번 주 완주에 더 가까워져요.",
       nextActions: [
-        "AI 업무 가이드로 오늘 실행 항목 2건 실천",
+        "미션 수행에서 실천 체크 2건 완료",
         "리스크·대안 경로를 한 줄씩 팀에 공유",
       ],
     },
     forHr: {
       summary:
-        "2주차 미션 진행 약 67%. 도전 목표를 마일스톤으로 분해하는 실행력이 확인됨.",
-      progressPct: 67,
+        "2주차 미션 진행 약 50%. 결과물 1건 제출, 도전 목표를 마일스톤으로 분해하는 실행력이 확인됨.",
+      progressPct: 50,
       riskLevel: "watch",
-      interventionHint: "다음 체크인에서 회복되는지 가볍게 지켜봐 주세요.",
-      criteriaDone: 2,
-      criteriaTotal: 3,
+      interventionHint: "다음 제출에서 회복되는지 가볍게 지켜봐 주세요.",
+      artifactCount: 1,
       practicedGuideCount: 0,
     },
     generatedAt: "2026-09-11T10:05:00.000Z",
@@ -655,17 +785,16 @@ export const SEED_MISSION_FEEDBACKS: MissionFeedback[] = [
         "피드백을 한 번 요청한 것만으로도 큰 진전이에요. 혼자 끌지 말고 버디와 짧은 문장 연습부터 이어가 보세요.",
       nextActions: [
         "버디에게 피드백 문장 초안 리뷰 요청",
-        "AI 가이드로 소통 DNA 실천 1건",
+        "미션 수행에서 소통·피드백 실천 체크 1건",
       ],
     },
     forHr: {
       summary:
-        "3주차 미션 진행 약 33%. 소통·피드백 루프 참여가 낮고 지연 신호가 있음.",
-      progressPct: 33,
+        "3주차 미션 진행 약 0%. 결과물 미제출, 소통·피드백 루프 참여가 낮고 지연 신호가 있음.",
+      progressPct: 0,
       riskLevel: "alert",
       interventionHint: "이번 주 안에 버디·멘토 1:1 체크인을 잡아보세요.",
-      criteriaDone: 1,
-      criteriaTotal: 3,
+      artifactCount: 0,
       practicedGuideCount: 0,
     },
     generatedAt: "2026-05-09T11:05:00.000Z",
@@ -687,7 +816,7 @@ export const SEED_DNA_EVIDENCE: DNAEvidence[] = [
   {
     id: "ev-emp03-1",
     employeeId: "emp-03",
-    dnaId: "data",
+    dnaId: "critical_thinking",
     source: "mission",
     sourceLabel: "2주차 미션",
     snippet: "경쟁사 자료를 수치로 정리해서 팀에 공유",
@@ -697,7 +826,7 @@ export const SEED_DNA_EVIDENCE: DNAEvidence[] = [
   {
     id: "ev-emp05-1",
     employeeId: "emp-05",
-    dnaId: "global",
+    dnaId: "innovation_accel",
     source: "simulator",
     sourceLabel: "Decision Simulator",
     snippet: "해외 표준 문서를 먼저 확인하고 판단했어요.",
@@ -713,13 +842,13 @@ export const SEED_OKR_CARDS: OKRCard[] = [
     month: "2026-08",
     objectives: [
       {
-        title: "온보딩 적응과 첫 업무 기여를 동시에 달성한다",
+        title: "AX 인턴으로서 첫 부서 맞춤 자동화 에이전트를 설계한다",
         keyResults: [
-          { text: "체크리스트 Month 1 80% 이상 완료", progress: 45 },
-          { text: "팀 채널에 진행 공유 주 1회 이상", progress: 60 },
-          { text: "주간 미션 4회 완료", progress: 25 },
+          { text: "부서 인터뷰·자동화 기회 맵 1건 제출", progress: 100 },
+          { text: "AI 도구 PoC·활용 가이드 초안 1건", progress: 70 },
+          { text: "에이전트 기능정의서·와이어프레임 1건", progress: 40 },
         ],
-        dnaLinked: ["ownership", "results"],
+        dnaLinked: ["innovation_accel", "value_solve", "goal_sense"],
       },
     ],
     status: "approved",
@@ -755,7 +884,7 @@ export const SEED_OKR_CARDS: OKRCard[] = [
           { text: "캠페인별 반응률 데이터 정리 2건", progress: 40 },
           { text: "경쟁사 포지셔닝 비교 리포트 1건", progress: 30 },
         ],
-        dnaLinked: ["data", "customer"],
+        dnaLinked: ["critical_thinking", "value_solve"],
       },
     ],
     status: "approved",
@@ -909,10 +1038,11 @@ export const SEED_CALENDAR_EVENTS: CalendarEvent[] = [
   },
   {
     id: "ev-5",
-    title: "1주차 미션 킥오프",
+    title: "AX 미션: 에이전트 기능정의 리뷰",
     date: "2026-08-08",
     time: "16:00",
     type: "education",
+    employeeId: DEMO_EMPLOYEE_ID,
   },
   {
     id: "ev-6",
@@ -968,10 +1098,10 @@ export const SEED_COMMUNITY_POSTS: CommunityPost[] = [
     id: "post-3",
     channel: "team",
     authorId: DEMO_EMPLOYEE_ID,
-    authorName: "김도윤",
+    authorName: "정예빈",
     team: "AX팀",
     title: "AX팀 자기소개",
-    body: "안녕하세요, AX 신규 김도윤입니다. 제조 AI 자동화에 관심 많아요. 잘 부탁드립니다!",
+    body: "안녕하세요, AX 인턴 정예빈입니다. 부서별 맞춤 AI 에이전트·자동화 설계에 관심 많아요. 인터뷰·테스트에 불러주시면 감사하겠습니다!",
     anonymous: false,
     createdAt: "2026-09-02T09:00:00.000Z",
   },
@@ -981,7 +1111,7 @@ export const SEED_COMMUNITY_POSTS: CommunityPost[] = [
     authorId: "org-ax-buddy",
     authorName: "오세진",
     team: "AX팀",
-    body: "환영해요 도윤님! 막히는 거 있으면 슬랙이나 여기로 바로 불러주세요.",
+    body: "환영해요 예빈님! 막히는 거 있으면 슬랙이나 여기로 바로 불러주세요.",
     anonymous: false,
     createdAt: "2026-09-02T09:30:00.000Z",
   },
@@ -1092,7 +1222,7 @@ export const SEED_ORG_MEMBERS: OrgMember[] = [
     team: "AX팀",
     role: "AX 엔지니어 · 버디",
     email: "sejin.oh@interxlab.com",
-    bio: "현장 자동화 파이프라인을 만들고, 신규 동료 온보딩을 도와요.",
+    bio: "부서별 AI 에이전트·자동화 봇을 만들고, 신규 동료 온보딩을 도와요.",
   },
   {
     id: "org-ax-mentor",
@@ -1100,14 +1230,14 @@ export const SEED_ORG_MEMBERS: OrgMember[] = [
     team: "AX팀",
     role: "AX 리드 · 멘토",
     email: "haneul.yoon@interxlab.com",
-    bio: "제조 현장 데이터와 AI 모델을 잇는 일을 오래 해왔어요.",
+    bio: "전사 AI 활용 가이드와 에이전트 로드맵을 이끌고 있어요.",
   },
   {
     id: "org-ax-2",
-    name: "김도윤",
+    name: "정예빈",
     team: "AX팀",
-    role: "AX 신규",
-    email: "doyoon.kim@interxlab.com",
+    role: "AX 인턴",
+    email: "yebin.jung@interxlab.com",
     bio: "2026 하반기 입사 · AI Transformation",
   },
   {

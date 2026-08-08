@@ -215,7 +215,7 @@ export default function LoginPage() {
                 label="이름"
                 value={name}
                 onChange={setName}
-                placeholder={role === "hr" ? "예: 한소율" : "예: 김도윤"}
+                placeholder={role === "hr" ? "예: 한소율" : "예: 정예빈"}
                 autoComplete="name"
               />
               <Field

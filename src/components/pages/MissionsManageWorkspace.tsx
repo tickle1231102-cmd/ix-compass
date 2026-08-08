@@ -26,7 +26,10 @@ export default function HrMissionManagePage() {
   const newhires = useMemo(
     () =>
       state.employees.filter(
-        (e) => e.phase === "온보딩 교육" || e.phase === "배치 1개월차" || e.weekNumber <= 4
+        (e) =>
+          e.phase === "온보딩 교육" ||
+          e.phase === "배치 1개월차" ||
+          e.weekNumber <= 4
       ),
     [state.employees]
   );
@@ -38,9 +41,6 @@ export default function HrMissionManagePage() {
 
   const [title, setTitle] = useState(template?.title ?? "");
   const [description, setDescription] = useState(template?.description ?? "");
-  const [criteriaText, setCriteriaText] = useState(
-    (template?.successCriteria ?? []).join("\n")
-  );
   const [dueAt, setDueAt] = useState("2026-08-15");
   const [priority, setPriority] = useState<"normal" | "high">("normal");
   const [savedFlash, setSavedFlash] = useState(false);
@@ -49,7 +49,6 @@ export default function HrMissionManagePage() {
     if (!template) return;
     setTitle(template.title);
     setDescription(template.description);
-    setCriteriaText(template.successCriteria.join("\n"));
   }, [templateId]);
 
   if (session && session.role !== "hr") {
@@ -62,18 +61,13 @@ export default function HrMissionManagePage() {
 
   function handleAssign() {
     if (!template || !employeeId) return;
-    const successCriteria = criteriaText
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (!title.trim() || successCriteria.length === 0) return;
+    if (!title.trim()) return;
     assignMission({
       employeeId,
       templateId: template.id,
       week: template.week,
       title: title.trim(),
       description: description.trim(),
-      successCriteria,
       dnaFocus: [...template.dnaFocus] as DNAId[],
       dueAt: new Date(`${dueAt}T18:00:00.000Z`).toISOString(),
       priority,
@@ -95,8 +89,8 @@ export default function HrMissionManagePage() {
         <Eyebrow>Mission Assign</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">미션 배정</h3>
         <p className="mt-1 text-sm text-ink-soft">
-          주차별 템플릿을 고른 뒤 개인·팀에 맞춰 수정해 배정하세요. 신입은 AI
-          가이드로 수행하고, 인사팀은 AI 요약만 확인합니다.
+          주차별 템플릿을 고른 뒤 개인·팀에 맞춰 수정해 배정하세요. 신입은 결과물을
+          제출하고, 인사팀은 AI 요약만 확인합니다.
         </p>
       </div>
 
@@ -152,18 +146,6 @@ export default function HrMissionManagePage() {
           />
         </label>
 
-        <label className="mt-3 block text-sm">
-          <span className="text-xs font-medium text-ink-faint">
-            성공 기준 (줄바꿈으로 구분)
-          </span>
-          <textarea
-            value={criteriaText}
-            onChange={(e) => setCriteriaText(e.target.value)}
-            rows={4}
-            className="mt-1 w-full rounded-xl border border-line px-3.5 py-2.5 outline-none focus:border-brand"
-          />
-        </label>
-
         <div className="mt-3 flex flex-wrap gap-1.5">
           {(template?.dnaFocus ?? []).map((id) => (
             <Tag key={id} tone="brand">
@@ -199,9 +181,7 @@ export default function HrMissionManagePage() {
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <PrimaryButton onClick={handleAssign}>미션 배정</PrimaryButton>
-          <SecondaryButton
-            onClick={() => router.push("/feedback/review")}
-          >
+          <SecondaryButton onClick={() => router.push("/feedback/review")}>
             진행 리뷰 보기
           </SecondaryButton>
           {savedFlash && (

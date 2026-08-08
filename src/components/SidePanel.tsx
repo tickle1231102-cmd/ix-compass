@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { NavChild } from "@/lib/nav-config";
 
 export function PageShell({
   children,
@@ -40,7 +41,7 @@ export function SideNav({
               <button
                 type="button"
                 onClick={() => onSelect(item.id)}
-                className={`w-full rounded-xl px-3.5 py-3 text-left transition-colors ${
+                className={`min-h-11 w-full rounded-xl px-3.5 py-3 text-left transition-colors ${
                   active
                     ? "bg-brand-soft text-brand-dark"
                     : "text-ink-soft hover:bg-line-soft hover:text-ink"
@@ -50,7 +51,7 @@ export function SideNav({
                 {item.hint && (
                   <span
                     className={`mt-0.5 block text-xs ${
-                      active ? "text-brand-dark/70" : "text-ink-faint"
+                      active ? "text-brand-dark/70" : "text-ink-soft"
                     }`}
                   >
                     {item.hint}
@@ -78,15 +79,15 @@ function isNavActive(href: string, activeHref: string): boolean {
         "reflection",
         "feedback",
         "risk-radar",
-        "okr-draft",
         "missions",
+        "okr-draft",
       ];
-      return !named.includes(segment);
+      if (named.includes(segment)) return false;
+      return true;
     }
     return false;
   }
-  // Sibling routes under missions: manage vs list must not cross-highlight.
-  if (href.endsWith("/missions") && !href.endsWith("/missions/manage")) {
+  if (href === "/journey/missions") {
     return (
       activeHref === href ||
       (activeHref.startsWith(`${href}/`) &&
@@ -97,43 +98,73 @@ function isNavActive(href: string, activeHref: string): boolean {
   return activeHref === href || activeHref.startsWith(`${href}/`);
 }
 
+function NavLinkItem({
+  item,
+  activeHref,
+}: {
+  item: NavChild;
+  activeHref: string;
+}) {
+  const active = isNavActive(item.href, activeHref);
+  return (
+    <li>
+      <Link
+        href={item.href}
+        aria-current={active ? "page" : undefined}
+        className={`block min-h-11 rounded-xl px-3.5 py-3 transition-colors ${
+          active
+            ? "bg-brand-soft text-brand-dark"
+            : "text-ink-soft hover:bg-line-soft hover:text-ink"
+        }`}
+      >
+        <span className="block text-sm font-bold">{item.label}</span>
+        {item.hint && (
+          <span
+            className={`mt-0.5 block text-xs ${
+              active ? "text-brand-dark/70" : "text-ink-soft"
+            }`}
+          >
+            {item.hint}
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+}
+
 export function SideNavLinks({
   items,
   activeHref,
 }: {
-  items: { href: string; label: string; hint?: string }[];
+  items: NavChild[];
   activeHref: string;
 }) {
+  const primary = items.filter((i) => !i.secondary);
+  const secondary = items.filter((i) => i.secondary);
+
   return (
-    <nav className="rounded-2xl border border-line bg-white p-2">
+    <nav aria-label="섹션 메뉴" className="rounded-2xl border border-line bg-white p-2">
       <ul className="space-y-1">
-        {items.map((item) => {
-          const active = isNavActive(item.href, activeHref);
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={`block rounded-xl px-3.5 py-3 transition-colors ${
-                  active
-                    ? "bg-brand-soft text-brand-dark"
-                    : "text-ink-soft hover:bg-line-soft hover:text-ink"
-                }`}
-              >
-                <span className="block text-sm font-bold">{item.label}</span>
-                {item.hint && (
-                  <span
-                    className={`mt-0.5 block text-xs ${
-                      active ? "text-brand-dark/70" : "text-ink-faint"
-                    }`}
-                  >
-                    {item.hint}
-                  </span>
-                )}
-              </Link>
-            </li>
-          );
-        })}
+        {primary.map((item) => (
+          <NavLinkItem key={item.href} item={item} activeHref={activeHref} />
+        ))}
       </ul>
+      {secondary.length > 0 && (
+        <details className="mt-2 border-t border-line-soft pt-2">
+          <summary className="cursor-pointer list-none rounded-xl px-3.5 py-2.5 text-xs font-bold text-ink-soft marker:content-none hover:bg-line-soft [&::-webkit-details-marker]:hidden">
+            더보기
+          </summary>
+          <ul className="mt-1 space-y-1">
+            {secondary.map((item) => (
+              <NavLinkItem
+                key={item.href}
+                item={item}
+                activeHref={activeHref}
+              />
+            ))}
+          </ul>
+        </details>
+      )}
     </nav>
   );
 }

@@ -1,4 +1,4 @@
 import { redirect } from "next/navigation";
 export default function Page() {
-  redirect("/journey/checklist");
+  redirect("/journey/okr");
 }

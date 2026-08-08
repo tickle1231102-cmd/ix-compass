@@ -4,13 +4,16 @@ import type { RiskLevel, Sentiment } from "@/lib/types";
 export function Card({
   children,
   className = "",
+  id,
 }: {
   children: ReactNode;
   className?: string;
+  id?: string;
 }) {
   return (
     <div
-      className={`rounded-2xl border border-line bg-white p-5 sm:p-6 ${className}`}
+      id={id}
+      className={`scroll-mt-36 rounded-2xl border border-line bg-white p-5 sm:p-6 ${className}`}
     >
       {children}
     </div>
@@ -87,7 +90,13 @@ export function SentimentTag({ sentiment }: { sentiment: Sentiment }) {
 export function ProgressBar({ value }: { value: number }) {
   const clamped = Math.max(0, Math.min(100, value));
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-line-soft">
+    <div
+      role="progressbar"
+      aria-valuenow={clamped}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      className="h-2.5 w-full overflow-hidden rounded-full bg-line-soft"
+    >
       <div
         className="h-full rounded-full bg-brand transition-all"
         style={{ width: `${clamped}%` }}
@@ -139,19 +148,22 @@ export function PrimaryButton({
   disabled,
   type = "button",
   className = "",
+  busy = false,
 }: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   type?: "button" | "submit";
   className?: string;
+  busy?: boolean;
 }) {
   return (
     <button
       type={type}
       onClick={onClick}
-      disabled={disabled}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      disabled={disabled || busy}
+      aria-busy={busy || undefined}
+      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
     >
       {children}
     </button>
@@ -174,7 +186,7 @@ export function SecondaryButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:border-brand hover:text-brand-dark disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-line px-4 py-2.5 text-sm font-semibold text-ink-soft transition-colors hover:border-brand hover:text-brand-dark disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
     >
       {children}
     </button>

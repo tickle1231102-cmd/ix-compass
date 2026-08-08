@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Eyebrow, Tag } from "@/components/ui";
+import { Card, Eyebrow } from "@/components/ui";
 import { DNA_VALUES } from "@/lib/seed";
 
 export default function IntroVisionPage() {
@@ -10,8 +10,8 @@ export default function IntroVisionPage() {
         <Eyebrow>Vision & DNA</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">비전 & 핵심가치</h3>
         <p className="mt-1 text-sm text-ink-soft">
-          인터엑스가 현장과 데이터를 잇는 방식, 그리고 12가지 핵심가치를
-          소개합니다.
+          인터엑스가 중요하게 생각하는 12가지 핵심가치입니다. 암기보다 오늘
+          업무에 가장 중요한 3가지만 실천하면 됩니다.
         </p>
       </div>
 
@@ -26,10 +26,14 @@ export default function IntroVisionPage() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {DNA_VALUES.map((dna) => (
-          <Card key={dna.id}>
-            <Tag tone="brand">{dna.shortLabel}</Tag>
+          <Card key={dna.id} className="!p-4">
+            <p className="text-lg leading-none" aria-hidden>
+              {dna.emoji}
+            </p>
             <p className="mt-2 font-semibold text-ink">{dna.label}</p>
-            <p className="mt-1 text-sm text-ink-soft">{dna.description}</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
+              {dna.description}
+            </p>
           </Card>
         ))}
       </div>

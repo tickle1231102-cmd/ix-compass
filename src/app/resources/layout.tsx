@@ -7,7 +7,6 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <SectionShell
       sectionHref="/resources"
-      eyebrow="Resource Center"
       title="자료실"
       description="업무 툴 가이드, 용어 사전, FAQ, AI 버디로 궁금증을 해결하세요."
     >

@@ -3,13 +3,15 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { CHECKLIST_STAGE_LABEL, DEMO_TODAY, SCENARIOS } from "@/lib/seed";
+import { DEMO_TODAY, SCENARIOS } from "@/lib/seed";
 import {
   computeAssignmentProgressPct,
   getActiveAssignmentForEmployee,
   getChecklistStats,
   getDraftOkrForEmployee,
   getEmployeeById,
+  getFeedbackForAssignment,
+  getGuidesForAssignment,
   getHrMissionReviewQueue,
   getMissionRiskSignalsForEmployee,
   getTodayEvents,
@@ -27,15 +29,14 @@ import {
   SectionHeading,
   Tag,
 } from "@/components/ui";
-import type { ChecklistStage } from "@/lib/types";
 
-const STAGES: ChecklistStage[] = [
-  "day1",
-  "week1",
-  "month1",
-  "day60",
-  "day90",
-];
+const DASHBOARD_STAGES = ["day1", "week1"] as const;
+
+const DASHBOARD_STAGE_LABEL: Record<(typeof DASHBOARD_STAGES)[number], string> =
+  {
+    day1: "일간",
+    week1: "주간",
+  };
 
 export default function DashboardPage() {
   const {
@@ -48,9 +49,25 @@ export default function DashboardPage() {
   const isHr = session?.role === "hr";
   const me = getEmployeeById(state, currentEmployeeId);
   const stats = getChecklistStats(state, currentEmployeeId);
-  const unchecked = getUncheckedChecklistItems(state, currentEmployeeId, 3);
+  const dashChecked = DASHBOARD_STAGES.reduce(
+    (sum, stage) => sum + stats.byStage[stage].checked,
+    0
+  );
+  const dashTotal = DASHBOARD_STAGES.reduce(
+    (sum, stage) => sum + stats.byStage[stage].total,
+    0
+  );
+  const dashPercent =
+    dashTotal === 0 ? 0 : Math.round((dashChecked / dashTotal) * 100);
+  const unchecked = getUncheckedChecklistItems(state, currentEmployeeId, 3)
+    .filter((item) => item.stage === "day1" || item.stage === "week1")
+    .slice(0, 3);
   const todayEvents = getTodayEvents(state, currentEmployeeId, DEMO_TODAY);
   const docs = searchLibraryDocs("온보딩").slice(0, 2);
+  const activeMission = getActiveAssignmentForEmployee(
+    state,
+    currentEmployeeId
+  );
 
   const scenario = SCENARIOS[0];
   const [choiceId, setChoiceId] = useState<string | null>(null);
@@ -77,40 +94,63 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
       <SectionHeading
-        eyebrow="Dashboard"
+        eyebrow="대시보드"
         title={`${session?.name ?? me?.name ?? "동료"}님, 오늘도 한 걸음`}
-        description="온보딩 진행률과 오늘 일정, 다음에 할 일을 한눈에 보여드려요."
+        description="다음에 할 일 하나만 먼저 보고, 나머지는 필요할 때 펼치세요."
       />
+
+      <NewhireMissionWidget employeeId={currentEmployeeId} />
+
+      {!activeMission && (
+        <Card className="mb-6">
+          <Eyebrow>다음 할 일</Eyebrow>
+          <h3 className="mt-1 text-lg font-bold text-ink">
+            배정된 미션이 아직 없어요
+          </h3>
+          <p className="mt-1 text-sm text-ink-soft">
+            일간·주간 체크리스트부터 진행하거나 소개를 읽어 보세요.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href="/journey/checklist">
+              <PrimaryButton>일간·주간 체크리스트 보기</PrimaryButton>
+            </Link>
+            <Link
+              href="/intro/vision"
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-dark"
+            >
+              소개 읽기 →
+            </Link>
+          </div>
+        </Card>
+      )}
 
       <Card className="mb-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-ink-faint">전체 진행률</p>
-            <p className="mt-1 text-3xl font-bold text-ink">{stats.percent}%</p>
+            <p className="text-xs font-medium text-ink-soft">일간 · 주간 진행률</p>
+            <p className="mt-1 text-3xl font-bold text-ink">{dashPercent}%</p>
             <p className="mt-1 text-sm text-ink-soft">
-              {stats.checked}/{stats.total} 항목 완료
+              {dashChecked}/{dashTotal} 항목 완료
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/journey/checklist">
-              <SecondaryButton>30-60-90 체크리스트</SecondaryButton>
-            </Link>
-            <Link href="/intro/vision">
-              <SecondaryButton>소개</SecondaryButton>
-            </Link>
-          </div>
+          <Link
+            href="/journey/checklist"
+            className="text-sm font-semibold text-brand-dark"
+          >
+            전체 체크리스트 보기 →
+          </Link>
         </div>
         <div className="mt-4">
-          <ProgressBar value={stats.percent} />
+          <ProgressBar value={dashPercent} />
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {STAGES.map((stage) => (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {DASHBOARD_STAGES.map((stage) => (
             <div
               key={stage}
               className="rounded-xl border border-line-soft bg-line-soft/50 px-3 py-2.5"
             >
               <p className="text-xs font-semibold text-brand">
-                {CHECKLIST_STAGE_LABEL[stage]}
+                {DASHBOARD_STAGE_LABEL[stage]}
               </p>
               <p className="mt-1 text-lg font-bold text-ink">
                 {stats.byStage[stage].checked}/{stats.byStage[stage].total}
@@ -120,11 +160,9 @@ export default function DashboardPage() {
         </div>
       </Card>
 
-      <NewhireMissionWidget employeeId={currentEmployeeId} />
-
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <Eyebrow>Today · {DEMO_TODAY}</Eyebrow>
+          <Eyebrow>오늘 · {DEMO_TODAY}</Eyebrow>
           <h3 className="mt-1 text-lg font-bold text-ink">오늘 일정</h3>
           {todayEvents.length === 0 ? (
             <p className="mt-3 text-sm text-ink-soft">오늘 예정된 일정이 없어요.</p>
@@ -137,114 +175,128 @@ export default function DashboardPage() {
                 >
                   <div>
                     <p className="text-sm font-semibold text-ink">{ev.title}</p>
-                    <p className="text-xs text-ink-faint">{ev.description}</p>
+                    <p className="text-xs text-ink-soft">{ev.description}</p>
                   </div>
                   <Tag tone="neutral">{ev.time ?? "종일"}</Tag>
                 </li>
               ))}
             </ul>
           )}
+          <Link
+            href="/journey/timeline"
+            className="mt-3 inline-flex text-sm font-semibold text-brand-dark"
+          >
+            캘린더 보기 →
+          </Link>
         </Card>
 
         <Card>
-          <Eyebrow>Next up</Eyebrow>
+          <Eyebrow>이어서</Eyebrow>
           <h3 className="mt-1 text-lg font-bold text-ink">남은 체크리스트</h3>
           {unchecked.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-soft">모든 항목을 완료했어요!</p>
+            <p className="mt-3 text-sm text-ink-soft">일간·주간 항목을 모두 완료했어요!</p>
           ) : (
             <ul className="mt-3 space-y-2">
               {unchecked.map((item) => (
                 <li key={item.id} className="flex items-center gap-2 text-sm text-ink">
-                  <Tag tone="brand">{CHECKLIST_STAGE_LABEL[item.stage]}</Tag>
+                  <Tag tone="brand">
+                    {item.stage === "day1" ? "일간" : "주간"}
+                  </Tag>
                   {item.title}
                 </li>
               ))}
             </ul>
           )}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link href="/journey/missions">
-              <PrimaryButton>내 미션</PrimaryButton>
-            </Link>
-            <Link href="/journey/guide">
-              <SecondaryButton>AI 업무 가이드</SecondaryButton>
-            </Link>
-          </div>
-        </Card>
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <Eyebrow>오늘의 시나리오</Eyebrow>
-          <h3 className="mt-1 text-lg font-bold text-ink">{scenario.title}</h3>
-          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-            {scenario.context}
-          </p>
-          {attempt || simDone ? (
-            <div className="mt-3 rounded-xl border border-brand/30 bg-brand-softer p-3.5 text-sm text-ink">
-              {simFeedback || attempt?.aiFeedback}
-            </div>
-          ) : (
-            <div className="mt-3 space-y-2">
-              {scenario.choices.map((c) => (
-                <label
-                  key={c.id}
-                  className={`flex cursor-pointer items-start gap-2 rounded-xl border p-3 text-sm ${
-                    choiceId === c.id
-                      ? "border-brand bg-brand-softer"
-                      : "border-line hover:border-brand/40"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="scenario"
-                    checked={choiceId === c.id}
-                    onChange={() => setChoiceId(c.id)}
-                    className="mt-0.5 accent-[var(--color-brand)]"
-                  />
-                  {c.label}
-                </label>
-              ))}
-              <PrimaryButton onClick={runScenario} disabled={!choiceId}>
-                선택 제출
-              </PrimaryButton>
-            </div>
-          )}
-        </Card>
-
-        <Card>
-          <Eyebrow>자료실 추천</Eyebrow>
-          <h3 className="mt-1 text-lg font-bold text-ink">바로 보면 좋은 문서</h3>
-          <ul className="mt-3 space-y-2">
-            {(docs.length > 0 ? docs : searchLibraryDocs("").slice(0, 2)).map(
-              (doc) => (
-                <li key={doc.id}>
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block rounded-xl border border-line-soft px-3 py-2.5 transition-colors hover:border-brand"
-                  >
-                    <Tag tone="neutral" className="mb-1">
-                      {doc.category}
-                    </Tag>
-                    <p className="text-sm font-semibold text-ink">{doc.title}</p>
-                    <p className="text-xs text-ink-soft">{doc.summary}</p>
-                  </a>
-                </li>
-              )
-            )}
-          </ul>
           <Link
-            href="/resources/tools"
+            href="/journey/checklist"
             className="mt-3 inline-flex text-sm font-semibold text-brand-dark"
           >
-            자료실 더 보기 →
+            체크리스트에서 완료하기 →
           </Link>
         </Card>
       </div>
 
+      <details className="mt-6 rounded-2xl border border-line bg-white open:shadow-sm">
+        <summary className="cursor-pointer list-none px-5 py-4 text-sm font-bold text-ink marker:content-none [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center justify-between gap-2">
+            더 보기 · 시나리오 · 자료 추천
+            <span className="text-xs font-medium text-ink-soft">펼치기</span>
+          </span>
+        </summary>
+        <div className="grid gap-6 border-t border-line-soft px-5 py-5 lg:grid-cols-2">
+          <div>
+            <Eyebrow>오늘의 시나리오</Eyebrow>
+            <h3 className="mt-1 text-lg font-bold text-ink">{scenario.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+              {scenario.context}
+            </p>
+            {attempt || simDone ? (
+              <div className="mt-3 rounded-xl border border-brand/30 bg-brand-softer p-3.5 text-sm text-ink">
+                {simFeedback || attempt?.aiFeedback}
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {scenario.choices.map((c) => (
+                  <label
+                    key={c.id}
+                    className={`flex cursor-pointer items-start gap-2 rounded-xl border p-3 text-sm ${
+                      choiceId === c.id
+                        ? "border-brand bg-brand-softer"
+                        : "border-line hover:border-brand/40"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="scenario"
+                      checked={choiceId === c.id}
+                      onChange={() => setChoiceId(c.id)}
+                      className="mt-0.5 accent-[var(--color-brand)]"
+                    />
+                    {c.label}
+                  </label>
+                ))}
+                <PrimaryButton onClick={runScenario} disabled={!choiceId}>
+                  선택 제출
+                </PrimaryButton>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <Eyebrow>자료실 추천</Eyebrow>
+            <h3 className="mt-1 text-lg font-bold text-ink">바로 보면 좋은 문서</h3>
+            <ul className="mt-3 space-y-2">
+              {(docs.length > 0 ? docs : searchLibraryDocs("").slice(0, 2)).map(
+                (doc) => (
+                  <li key={doc.id}>
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block rounded-xl border border-line-soft px-3 py-2.5 transition-colors hover:border-brand"
+                    >
+                      <Tag tone="neutral" className="mb-1">
+                        {doc.category}
+                      </Tag>
+                      <p className="text-sm font-semibold text-ink">{doc.title}</p>
+                      <p className="text-xs text-ink-soft">{doc.summary}</p>
+                    </a>
+                  </li>
+                )
+              )}
+            </ul>
+            <Link
+              href="/resources/tools"
+              className="mt-3 inline-flex text-sm font-semibold text-brand-dark"
+            >
+              자료실 더 보기 →
+            </Link>
+          </div>
+        </div>
+      </details>
+
       {me && (
-        <p className="mt-8 text-center text-xs text-ink-faint">
+        <p className="mt-8 text-center text-xs text-ink-soft">
           {me.dept} · {me.phase} · {me.weekNumber}주차 · 리스크{" "}
           <RiskTag level={me.riskLevel} />
         </p>
@@ -258,12 +310,21 @@ function NewhireMissionWidget({ employeeId }: { employeeId: string }) {
   const active = getActiveAssignmentForEmployee(state, employeeId);
   if (!active) return null;
   const pct = computeAssignmentProgressPct(state, active.id);
+  const guides = getGuidesForAssignment(state, active.id);
+  const practiced = guides.reduce((s, g) => s + g.practicedGuideIds.length, 0);
+  const feedback = getFeedbackForAssignment(state, active.id);
+  const continueHref =
+    practiced === 0
+      ? "/journey/missions#guide"
+      : feedback
+        ? "/journey/missions"
+        : "/journey/missions#submit";
   return (
-    <Card className="mb-6">
-      <Eyebrow>이번 주 미션</Eyebrow>
+    <Card className="mb-6 border-brand/25 bg-brand-softer/30">
+      <Eyebrow>다음 할 일</Eyebrow>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h3 className="text-lg font-bold text-ink">
+          <h3 className="text-xl font-bold text-ink">
             {active.week}주차 · {active.title}
           </h3>
           <p className="mt-1 text-sm text-ink-soft">{active.description}</p>
@@ -273,14 +334,9 @@ function NewhireMissionWidget({ employeeId }: { employeeId: string }) {
       <div className="mt-3">
         <ProgressBar value={pct} />
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Link href="/journey/missions">
+      <div className="mt-4">
+        <Link href={continueHref}>
           <PrimaryButton>미션 이어하기</PrimaryButton>
-        </Link>
-        <Link
-          href={`/journey/guide?assignmentId=${encodeURIComponent(active.id)}&task=${encodeURIComponent(`${active.title} — ${active.description}`)}`}
-        >
-          <SecondaryButton>AI 가이드로 수행</SecondaryButton>
         </Link>
       </div>
     </Card>
@@ -321,26 +377,26 @@ function HrDashboard() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
       <SectionHeading
-        eyebrow="HR Ops Dashboard"
+        eyebrow="인사 대시보드"
         title={`${session?.name ?? "인사팀"}님, 코호트 운영 현황`}
         description="미션 AI 피드백 확인, OKR 초안, 리스크, 전환심사 브리핑을 대시보드에서 바로 처리하세요."
       />
 
       <div className="grid gap-4 sm:grid-cols-4">
         <Card>
-          <p className="text-xs text-ink-faint">코호트 인원</p>
+          <p className="text-xs text-ink-soft">코호트 인원</p>
           <p className="mt-1 text-2xl font-bold">{state.employees.length}</p>
         </Card>
         <Card>
-          <p className="text-xs text-ink-faint">관찰·주의</p>
+          <p className="text-xs text-ink-soft">관찰·주의</p>
           <p className="mt-1 text-2xl font-bold">{watchOrAlert.length}</p>
         </Card>
         <Card>
-          <p className="text-xs text-ink-faint">확인 필요 미션</p>
+          <p className="text-xs text-ink-soft">확인 필요 미션</p>
           <p className="mt-1 text-2xl font-bold">{pending.length}</p>
         </Card>
         <Card>
-          <p className="text-xs text-ink-faint">OKR 초안</p>
+          <p className="text-xs text-ink-soft">OKR 초안</p>
           <p className="mt-1 text-2xl font-bold">
             {state.okrCards.filter((c) => c.status === "draft").length}
           </p>
@@ -349,7 +405,7 @@ function HrDashboard() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <Card>
-          <Eyebrow>Mission Progress Copilot</Eyebrow>
+          <Eyebrow>미션 진행</Eyebrow>
           <h3 className="mt-1 font-bold text-ink">확인이 필요한 AI 피드백</h3>
           <ul className="mt-3 max-h-80 space-y-3 overflow-y-auto">
             {pending.length === 0 && (
@@ -365,7 +421,7 @@ function HrDashboard() {
                   </p>
                   <RiskTag level={item.forHr.riskLevel} />
                 </div>
-                <p className="mt-1 text-xs text-ink-faint">{item.missionTitle}</p>
+                <p className="mt-1 text-xs text-ink-soft">{item.missionTitle}</p>
                 <p className="mt-1 text-xs text-ink-soft">{item.forHr.summary}</p>
                 <p className="mt-1 text-xs font-medium text-brand-dark">
                   → {item.forHr.interventionHint}
@@ -394,7 +450,7 @@ function HrDashboard() {
         </Card>
 
         <Card>
-          <Eyebrow>OKR Draft Agent</Eyebrow>
+          <Eyebrow>OKR 초안</Eyebrow>
           <h3 className="mt-1 font-bold text-ink">다음 달 목표 초안</h3>
           {!meDraft ? (
             <div className="mt-3">
@@ -425,7 +481,7 @@ function HrDashboard() {
       </div>
 
       <div className="mt-6">
-        <SectionHeading title="Isolation Risk Radar" />
+        <SectionHeading title="리스크 레이더" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {riskCards.map(({ emp, note }) => (
             <Card key={emp.id}>
@@ -443,13 +499,13 @@ function HrDashboard() {
       </div>
 
       <Card className="mt-6">
-        <Eyebrow>Review Packet</Eyebrow>
+        <Eyebrow>전환심사</Eyebrow>
         <h3 className="mt-1 font-bold text-ink">3개월 전환심사 브리핑</h3>
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <select
             value={packetEmployeeId}
             onChange={(e) => setPacketEmployeeId(e.target.value)}
-            className="rounded-lg border border-line px-3 py-2 text-sm"
+            className="min-h-11 rounded-lg border border-line px-3 py-2 text-sm"
           >
             {state.employees.map((e) => (
               <option key={e.id} value={e.id}>
