@@ -147,7 +147,7 @@ export default function NewhireMissionsPage() {
     const text = `${active.title} — ${active.description}`.trim();
     if (!text) return;
     autoRanFor.current = active.id;
-    runContextChecklist(active.week, text, active.id);
+    void runContextChecklist(active.week, text, active.id);
   }, [active?.id, latestChecklist?.id, me, runContextChecklist, active]);
 
   // Hash deep-link (#guide | #submit | #mission | #feedback)
@@ -253,10 +253,10 @@ export default function NewhireMissionsPage() {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   }
 
-  function handleRunChecklist(assignmentId?: string, week?: number) {
+  async function handleRunChecklist(assignmentId?: string, week?: number) {
     const text = taskInput.trim();
     if (!text) return;
-    runContextChecklist(
+    await runContextChecklist(
       week ?? active?.week ?? (me!.weekNumber || 1),
       text,
       assignmentId ?? active?.id
@@ -283,7 +283,7 @@ export default function NewhireMissionsPage() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      submitMissionCheckIn({
+      await submitMissionCheckIn({
         assignmentId: active.id,
         privateNote: privateNote.trim() || undefined,
         attachments,

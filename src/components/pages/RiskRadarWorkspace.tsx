@@ -1,23 +1,57 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { computeRiskNote } from "@/lib/ai";
+import { askRiskNotes } from "@/lib/ai-api";
 import { getMissionRiskSignalsForEmployee } from "@/lib/selectors";
 import { Card, Eyebrow, RiskTag, Tag } from "@/components/ui";
+import type { RiskLevel } from "@/lib/types";
+
+type Note = {
+  level: RiskLevel;
+  reason: string;
+  suggestedAction: string;
+};
 
 export default function RiskRadarPage() {
   const { state, session } = useStore();
   const isHr = session?.role === "hr";
 
-  const riskCards = useMemo(
+  const baseCards = useMemo(
     () =>
       state.employees.map((emp) => {
         const signals = getMissionRiskSignalsForEmployee(state, emp.id);
-        return { emp, note: computeRiskNote(emp.id, 0, signals), signals };
+        return {
+          emp,
+          signals,
+          note: computeRiskNote(emp.id, 0, signals) as Note,
+        };
       }),
     [state]
   );
+
+  const [notesById, setNotesById] = useState<Record<string, Note>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    const items = baseCards.map(({ emp, signals }) => ({
+      employeeId: emp.id,
+      employeeName: emp.name,
+      signals,
+    }));
+    void askRiskNotes(items).then((rows) => {
+      if (cancelled) return;
+      const next: Record<string, Note> = {};
+      for (const row of rows) {
+        next[row.employeeId] = row.note;
+      }
+      setNotesById(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [baseCards]);
 
   if (!isHr) {
     return (
@@ -28,6 +62,11 @@ export default function RiskRadarPage() {
       </Card>
     );
   }
+
+  const riskCards = baseCards.map((card) => ({
+    ...card,
+    note: notesById[card.emp.id] ?? card.note,
+  }));
 
   const watchCount = riskCards.filter(
     (c) => c.note.level !== "stable"

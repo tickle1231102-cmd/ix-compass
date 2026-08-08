@@ -59,6 +59,13 @@ import {
   generateReviewPacket,
   matchFAQ,
 } from "./ai";
+import {
+  askChecklist,
+  askMissionFeedback,
+  askOkrDraft,
+  type ChecklistResult,
+  type MissionFeedbackResult,
+} from "./ai-api";
 import { getMissionRiskSignalsForEmployee } from "./selectors";
 
 interface State {
@@ -135,9 +142,26 @@ type Action =
       choiceId: string;
       reasoning: string;
     }
-  | { type: "RUN_CONTEXT_CHECKLIST"; week: number; taskText: string; assignmentId?: string }
+  | {
+      type: "RUN_CONTEXT_CHECKLIST";
+      week: number;
+      taskText: string;
+      assignmentId?: string;
+      checklistId?: string;
+      result?: ChecklistResult;
+    }
+  | {
+      type: "UPGRADE_CONTEXT_CHECKLIST";
+      checklistId: string;
+      result: ChecklistResult;
+    }
   | { type: "PRACTICE_GUIDE"; checklistId: string; guideId: string }
-  | { type: "GENERATE_OKR_DRAFT"; employeeId: string; month: string }
+  | {
+      type: "GENERATE_OKR_DRAFT";
+      employeeId: string;
+      month: string;
+      draft?: OKRCard;
+    }
   | { type: "APPROVE_OKR"; id: string }
   | { type: "REJECT_OKR"; id: string }
   | { type: "SUBMIT_ASK"; text: string }
@@ -169,8 +193,13 @@ type Action =
       attachments?: MissionAttachment[];
       /** When true, generate AI feedback immediately after saving the check-in. */
       generateFeedback?: boolean;
+      feedbackResult?: MissionFeedbackResult;
     }
-  | { type: "GENERATE_MISSION_FEEDBACK"; assignmentId: string }
+  | {
+      type: "GENERATE_MISSION_FEEDBACK";
+      assignmentId: string;
+      feedbackResult?: MissionFeedbackResult;
+    }
   | {
       type: "MARK_MISSION_FEEDBACK_REVIEWED";
       id: string;
@@ -254,7 +283,11 @@ function recomputeRisk(state: State, employeeId: string): Employee[] {
   );
 }
 
-function withMissionFeedback(state: State, assignmentId: string): State {
+function withMissionFeedback(
+  state: State,
+  assignmentId: string,
+  feedbackResult?: MissionFeedbackResult
+): State {
   const assignment = state.missionAssignments.find((a) => a.id === assignmentId);
   if (!assignment) return state;
   const checkIns = state.missionCheckIns.filter(
@@ -263,7 +296,9 @@ function withMissionFeedback(state: State, assignmentId: string): State {
   const guides = state.contextChecklists.filter(
     (c) => c.assignmentId === assignmentId
   );
-  const result = generateMissionFeedback(assignment, checkIns, guides);
+  const result =
+    feedbackResult ??
+    generateMissionFeedback(assignment, checkIns, guides);
   const feedback: MissionFeedback = {
     id: `fb-${assignmentId}-${Date.now()}`,
     assignmentId: assignment.id,
@@ -401,9 +436,10 @@ function reducer(state: State, action: Action): State {
         : undefined;
       const template = MISSIONS.find((m) => m.week === action.week);
       const fallbackDna = assignment?.dnaFocus ?? template?.dnaFocus ?? [];
-      const result = analyzeTaskContext(action.taskText, fallbackDna);
+      const result =
+        action.result ?? analyzeTaskContext(action.taskText, fallbackDna);
       const checklist: ContextChecklist = {
-        id: `checklist-${employeeId}-${Date.now()}`,
+        id: action.checklistId ?? `checklist-${employeeId}-${Date.now()}`,
         employeeId,
         week: action.week,
         taskText: action.taskText,
@@ -425,6 +461,29 @@ function reducer(state: State, action: Action): State {
         ...state,
         contextChecklists: [...state.contextChecklists, checklist],
         missionAssignments,
+      };
+    }
+
+    case "UPGRADE_CONTEXT_CHECKLIST": {
+      const checklist = state.contextChecklists.find(
+        (c) => c.id === action.checklistId
+      );
+      if (!checklist) return state;
+      // Don't clobber if the user already started checking tips.
+      if (checklist.practicedGuideIds.length > 0) return state;
+      return {
+        ...state,
+        contextChecklists: state.contextChecklists.map((c) =>
+          c.id === action.checklistId
+            ? {
+                ...c,
+                relevantDnaIds: action.result.relevantDnaIds,
+                matchedKeywords: action.result.matchedKeywords,
+                rationale: action.result.rationale,
+                guides: action.result.guides,
+              }
+            : c
+        ),
       };
     }
 
@@ -488,11 +547,13 @@ function reducer(state: State, action: Action): State {
       const relevantEvidence = state.evidence.filter(
         (e) => e.employeeId === action.employeeId
       );
-      const draft = draftOKRFromEvidence(
-        relevantEvidence,
-        action.employeeId,
-        action.month
-      );
+      const draft =
+        action.draft ??
+        draftOKRFromEvidence(
+          relevantEvidence,
+          action.employeeId,
+          action.month
+        );
       return {
         ...state,
         okrCards: [
@@ -608,7 +669,11 @@ function reducer(state: State, action: Action): State {
         missionAssignments,
       };
       if (action.generateFeedback) {
-        return withMissionFeedback(withCheckIn, action.assignmentId);
+        return withMissionFeedback(
+          withCheckIn,
+          action.assignmentId,
+          action.feedbackResult
+        );
       }
       return withCheckIn;
     }
@@ -627,7 +692,11 @@ function reducer(state: State, action: Action): State {
       ) {
         return state;
       }
-      return withMissionFeedback(state, action.assignmentId);
+      return withMissionFeedback(
+        state,
+        action.assignmentId,
+        action.feedbackResult
+      );
     }
 
     case "MARK_MISSION_FEEDBACK_REVIEWED": {
@@ -1017,9 +1086,9 @@ interface StoreValue {
     week: number,
     taskText: string,
     assignmentId?: string
-  ) => void;
+  ) => Promise<void>;
   practiceGuide: (checklistId: string, guideId: string) => void;
-  generateOKRDraft: (employeeId: string, month: string) => void;
+  generateOKRDraft: (employeeId: string, month: string) => Promise<void>;
   approveOKR: (id: string) => void;
   rejectOKR: (id: string) => void;
   upsertOkrCard: (payload: {
@@ -1056,8 +1125,8 @@ interface StoreValue {
     artifactNote?: string;
     attachments?: MissionAttachment[];
     generateFeedback?: boolean;
-  }) => void;
-  generateMissionFeedbackFor: (assignmentId: string) => void;
+  }) => Promise<void>;
+  generateMissionFeedbackFor: (assignmentId: string) => Promise<void>;
   markMissionFeedbackReviewed: (
     id: string,
     hrInternalNote?: string,
@@ -1155,9 +1224,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const runContextChecklist = useCallback(
-    (week: number, taskText: string, assignmentId?: string) =>
-      dispatch({ type: "RUN_CONTEXT_CHECKLIST", week, taskText, assignmentId }),
-    []
+    async (week: number, taskText: string, assignmentId?: string) => {
+      const assignment = assignmentId
+        ? state.missionAssignments.find((a) => a.id === assignmentId)
+        : undefined;
+      const template = MISSIONS.find((m) => m.week === week);
+      const fallbackDna = assignment?.dnaFocus ?? template?.dnaFocus ?? [];
+      const checklistId = `checklist-${
+        state.session?.employeeId ?? "anon"
+      }-${Date.now()}`;
+      // Instant rule-engine guides, then upgrade with Gemini when ready.
+      dispatch({
+        type: "RUN_CONTEXT_CHECKLIST",
+        week,
+        taskText,
+        assignmentId,
+        checklistId,
+        result: analyzeTaskContext(taskText, fallbackDna),
+      });
+      const result = await askChecklist(taskText, fallbackDna);
+      dispatch({
+        type: "UPGRADE_CONTEXT_CHECKLIST",
+        checklistId,
+        result,
+      });
+    },
+    [state.missionAssignments, state.session?.employeeId]
   );
   const practiceGuide = useCallback(
     (checklistId: string, guideId: string) =>
@@ -1165,9 +1257,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const generateOKRDraft = useCallback(
-    (employeeId: string, month: string) =>
-      dispatch({ type: "GENERATE_OKR_DRAFT", employeeId, month }),
-    []
+    async (employeeId: string, month: string) => {
+      const relevantEvidence = state.evidence.filter(
+        (e) => e.employeeId === employeeId
+      );
+      const employee = state.employees.find((e) => e.id === employeeId);
+      const draft = await askOkrDraft({
+        evidence: relevantEvidence,
+        employeeId,
+        employeeName: employee?.name,
+        month,
+      });
+      dispatch({ type: "GENERATE_OKR_DRAFT", employeeId, month, draft });
+    },
+    [state.evidence, state.employees]
   );
   const approveOKR = useCallback(
     (id: string) => dispatch({ type: "APPROVE_OKR", id }),
@@ -1206,19 +1309,90 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const submitMissionCheckIn = useCallback(
-    (payload: {
+    async (payload: {
       assignmentId: string;
       privateNote?: string;
       artifactNote?: string;
       attachments?: MissionAttachment[];
       generateFeedback?: boolean;
-    }) => dispatch({ type: "SUBMIT_MISSION_CHECKIN", ...payload }),
-    []
+    }) => {
+      let feedbackResult: MissionFeedbackResult | undefined;
+      if (payload.generateFeedback) {
+        const assignment = state.missionAssignments.find(
+          (a) => a.id === payload.assignmentId
+        );
+        const employeeId = state.session?.employeeId;
+        if (assignment && employeeId) {
+          const guides = state.contextChecklists.filter(
+            (c) => c.assignmentId === payload.assignmentId
+          );
+          const pendingCheckIn: MissionCheckIn = {
+            id: `chk-pending-${payload.assignmentId}`,
+            assignmentId: payload.assignmentId,
+            employeeId,
+            privateNote: payload.privateNote?.trim() || undefined,
+            artifactNote: payload.artifactNote?.trim() || undefined,
+            attachments:
+              payload.attachments && payload.attachments.length > 0
+                ? payload.attachments.map((a) => ({ ...a }))
+                : undefined,
+            guideSessionIds: guides.map((g) => g.id),
+            createdAt: new Date().toISOString(),
+          };
+          const checkIns = [
+            ...state.missionCheckIns.filter(
+              (c) => c.assignmentId === payload.assignmentId
+            ),
+            pendingCheckIn,
+          ];
+          feedbackResult = await askMissionFeedback({
+            assignment,
+            checkIns,
+            guides,
+          });
+        }
+      }
+      dispatch({
+        type: "SUBMIT_MISSION_CHECKIN",
+        ...payload,
+        feedbackResult,
+      });
+    },
+    [
+      state.missionAssignments,
+      state.session?.employeeId,
+      state.contextChecklists,
+      state.missionCheckIns,
+    ]
   );
   const generateMissionFeedbackFor = useCallback(
-    (assignmentId: string) =>
-      dispatch({ type: "GENERATE_MISSION_FEEDBACK", assignmentId }),
-    []
+    async (assignmentId: string) => {
+      const assignment = state.missionAssignments.find(
+        (a) => a.id === assignmentId
+      );
+      if (!assignment) return;
+      const checkIns = state.missionCheckIns.filter(
+        (c) => c.assignmentId === assignmentId
+      );
+      const guides = state.contextChecklists.filter(
+        (c) => c.assignmentId === assignmentId
+      );
+      const feedbackResult = await askMissionFeedback({
+        assignment,
+        checkIns,
+        guides,
+      });
+      dispatch({
+        type: "GENERATE_MISSION_FEEDBACK",
+        assignmentId,
+        feedbackResult,
+      });
+    },
+    [
+      state.missionAssignments,
+      state.missionCheckIns,
+      state.contextChecklists,
+    ]
   );
   const markMissionFeedbackReviewed = useCallback(
     (id: string, hrInternalNote?: string, hrWeeklyFeedback?: string) =>

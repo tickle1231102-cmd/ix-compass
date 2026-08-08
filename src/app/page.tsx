@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { DEMO_TODAY, SCENARIOS } from "@/lib/seed";
@@ -19,6 +19,8 @@ import {
   searchLibraryDocs,
 } from "@/lib/selectors";
 import { computeRiskNote, evaluateSimulatorAnswer } from "@/lib/ai";
+import { askRiskNotes } from "@/lib/ai-api";
+import type { RiskLevel } from "@/lib/types";
 import { DashboardHero } from "@/components/DashboardHero";
 import {
   Card,
@@ -359,14 +361,50 @@ function HrDashboard() {
     (p) => p.employeeId === packetEmployeeId && p.period === "3개월"
   );
 
-  const riskCards = useMemo(
+  const baseRiskCards = useMemo(
     () =>
       state.employees.map((emp) => {
         const signals = getMissionRiskSignalsForEmployee(state, emp.id);
-        return { emp, note: computeRiskNote(emp.id, 0, signals) };
+        return {
+          emp,
+          signals,
+          note: computeRiskNote(emp.id, 0, signals) as {
+            level: RiskLevel;
+            reason: string;
+            suggestedAction: string;
+          },
+        };
       }),
     [state]
   );
+  const [riskNotes, setRiskNotes] = useState<
+    Record<
+      string,
+      { level: RiskLevel; reason: string; suggestedAction: string }
+    >
+  >({});
+  useEffect(() => {
+    let cancelled = false;
+    void askRiskNotes(
+      baseRiskCards.map(({ emp, signals }) => ({
+        employeeId: emp.id,
+        employeeName: emp.name,
+        signals,
+      }))
+    ).then((rows) => {
+      if (cancelled) return;
+      const next: typeof riskNotes = {};
+      for (const row of rows) next[row.employeeId] = row.note;
+      setRiskNotes(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [baseRiskCards]);
+  const riskCards = baseRiskCards.map((card) => ({
+    ...card,
+    note: riskNotes[card.emp.id] ?? card.note,
+  }));
 
   return (
     <div>

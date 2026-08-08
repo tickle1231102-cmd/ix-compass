@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { answerBuddyQuestion } from "@/lib/ai";
-import { getGeminiModel, isGeminiConfigured } from "@/lib/gemini";
+import { generateGeminiText, isGeminiConfigured } from "@/lib/gemini";
 
 export const runtime = "nodejs";
 
@@ -83,15 +83,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    const model = getGeminiModel(BUDDY_SYSTEM_INSTRUCTION);
-    if (!model) {
-      return NextResponse.json({
-        reply: fallbackReply(message, employeeName, checklistSummary),
-        source: "fallback" as const,
-        reason: "missing_api_key",
-      });
-    }
-
     const contextLines = [
       employeeName ? `신입 이름: ${employeeName}` : null,
       checklistSummary ? `온보딩 체크리스트 진행: ${checklistSummary}` : null,
@@ -106,28 +97,11 @@ export async function POST(request: Request) {
       .filter(Boolean)
       .join("\n\n");
 
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        maxOutputTokens: 1024,
-        temperature: 0.7,
-      },
-    });
-
-    let reply = "";
-    try {
-      reply = result.response.text()?.trim() ?? "";
-    } catch (parseError) {
-      console.error("[buddy] gemini response parse failed", parseError);
-    }
-
-    if (!reply) {
-      return NextResponse.json({
-        reply: fallbackReply(message, employeeName, checklistSummary),
-        source: "fallback" as const,
-        reason: "empty_model_response",
-      });
-    }
+    const reply = await generateGeminiText(
+      BUDDY_SYSTEM_INSTRUCTION,
+      prompt,
+      { maxOutputTokens: 700, thinkingBudget: 0 }
+    );
 
     return NextResponse.json({
       reply,

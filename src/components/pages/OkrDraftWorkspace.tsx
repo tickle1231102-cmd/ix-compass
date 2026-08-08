@@ -24,6 +24,7 @@ export default function OkrDraftAgentPage() {
     state.employees[0]?.id ?? ""
   );
   const [month, setMonth] = useState("2026-10");
+  const [generating, setGenerating] = useState(false);
 
   const draft = getDraftOkrForEmployee(state, employeeId);
   const employee = getEmployeeById(state, employeeId);
@@ -75,10 +76,18 @@ export default function OkrDraftAgentPage() {
             />
           </label>
           <PrimaryButton
-            onClick={() => generateOKRDraft(employeeId, month)}
-            disabled={!employeeId || !month.trim()}
+            onClick={async () => {
+              setGenerating(true);
+              try {
+                await generateOKRDraft(employeeId, month);
+              } finally {
+                setGenerating(false);
+              }
+            }}
+            disabled={!employeeId || !month.trim() || generating}
+            busy={generating}
           >
-            초안 생성
+            {generating ? "생성 중…" : "초안 생성"}
           </PrimaryButton>
         </div>
       </Card>
