@@ -162,7 +162,6 @@ export const DNA_KEYWORDS: Record<DNAId, string[]> = {
     "마감",
     "시간",
     "효율",
-    "자동화",
     "스케줄",
     "우선순위",
     "빠르게",
@@ -176,9 +175,7 @@ export const DNA_KEYWORDS: Record<DNAId, string[]> = {
     "어려운",
     "막힘",
     "끝까지",
-    "반복",
     "불확실",
-    "해결",
   ],
   value_solve: [
     "문제",
@@ -190,6 +187,10 @@ export const DNA_KEYWORDS: Record<DNAId, string[]> = {
     "현장",
     "요구사항",
     "페인",
+    "병목",
+    "수작업",
+    "반복 업무",
+    "자동화 기회",
   ],
   critical_thinking: [
     "데이터",
@@ -277,6 +278,10 @@ export const DNA_KEYWORDS: Record<DNAId, string[]> = {
     "조사",
     "디버깅",
     "학습",
+    "관찰",
+    "인터뷰",
+    "입사",
+    "기회",
   ],
 };
 
@@ -366,9 +371,9 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
   {
     id: "tpl-w1",
     week: 1,
-    title: "부서 업무 관찰·인터뷰로 자동화 기회 찾기",
+    title: "입사 첫 주: 부서 관찰·인터뷰로 자동화 기회 찾기",
     description:
-      "사내 1개 부서(또는 담당자 2명 이상)를 관찰·인터뷰해 반복 업무·수작업·정보 탐색 병목을 정리하세요. 자동화·AI 에이전트로 줄일 수 있는 기회 3건을 우선순위와 함께 결과물로 제출합니다.",
+      "입사 첫 주에 사내 1개 부서(또는 담당자 2명 이상)를 관찰·인터뷰해 반복 업무·수작업·정보 탐색 병목을 정리하세요. 자동화·AI 에이전트로 줄일 수 있는 기회 3건을 우선순위와 함께 결과물로 제출합니다.",
     dnaFocus: ["curiosity", "value_solve"],
   },
   {
@@ -583,9 +588,9 @@ export const SEED_EMPLOYEES: Employee[] = [
     name: "정예빈",
     dept: "AX팀",
     cohort: "2026년 하반기",
-    joinDate: "2026-09-01",
-    weekNumber: 3,
-    phase: "배치 1개월차",
+    joinDate: "2026-08-05",
+    weekNumber: 1,
+    phase: "온보딩 교육",
     riskLevel: "stable",
     isDemoUser: true,
     buddyId: "org-ax-buddy",
@@ -651,16 +656,16 @@ export const SEED_EMPLOYEES: Employee[] = [
 
 export const SEED_MISSION_ASSIGNMENTS: MissionAssignment[] = [
   {
-    id: "asg-me-w3",
+    id: "asg-me-w1",
     employeeId: DEMO_EMPLOYEE_ID,
-    templateId: "tpl-w3",
-    week: 3,
-    title: MISSION_TEMPLATES[2].title,
-    description: MISSION_TEMPLATES[2].description,
-    dnaFocus: [...MISSION_TEMPLATES[2].dnaFocus],
+    templateId: "tpl-w1",
+    week: 1,
+    title: MISSION_TEMPLATES[0].title,
+    description: MISSION_TEMPLATES[0].description,
+    dnaFocus: [...MISSION_TEMPLATES[0].dnaFocus],
     dueAt: "2026-08-08T18:00:00.000Z",
-    status: "in_progress",
-    assignedAt: "2026-08-01T09:00:00.000Z",
+    status: "assigned",
+    assignedAt: "2026-08-05T09:30:00.000Z",
     assignedBy: "hr",
     priority: "normal",
   },
@@ -698,27 +703,6 @@ export const SEED_MISSION_ASSIGNMENTS: MissionAssignment[] = [
 
 export const SEED_MISSION_CHECKINS: MissionCheckIn[] = [
   {
-    id: "chk-me-w3-1",
-    assignmentId: "asg-me-w3",
-    employeeId: DEMO_EMPLOYEE_ID,
-    privateNote:
-      "기능 범위를 어디까지 1차로 넣을지 고민 중이에요. 인터뷰에서 나온 요청이 많아서요.",
-    artifactNote: "기능정의서·와이어프레임 초안",
-    attachments: [
-      {
-        id: "att-me-w3-1",
-        name: "HR팀-온보딩FAQ-에이전트-기능정의-초안.txt",
-        mimeType: "text/plain",
-        size: 520,
-        kind: "text",
-        textContent:
-          "[대상] HR팀 온보딩 FAQ 응답 자동화\n[문제] 반복 FAQ 응대에 주 4시간 소요\n[에이전트 목표] 사내 FAQ·가이드 문서를 근거로 1차 답변 초안 생성\n[핵심 기능] 1) 질문 의도 분류 2) 문서 근거 인용 답변 3) 담당자 에스컬레이션\n[비범위] 연차 승인·급여 계산\n[일정] W1 인터뷰 정리 → W2 PoC → W3 기능정의/WF → W4 사용자 테스트\n[와이어프레임] 입력창 / 근거 카드 / ‘담당자 연결’ CTA",
-      },
-    ],
-    guideSessionIds: [],
-    createdAt: "2026-08-04T11:00:00.000Z",
-  },
-  {
     id: "chk-emp02-w2-1",
     assignmentId: "asg-emp02-w2",
     employeeId: "emp-02",
@@ -748,35 +732,6 @@ export const SEED_MISSION_CHECKINS: MissionCheckIn[] = [
 ];
 
 export const SEED_MISSION_FEEDBACKS: MissionFeedback[] = [
-  {
-    id: "fb-me-w2",
-    assignmentId: "asg-me-w2-done",
-    employeeId: DEMO_EMPLOYEE_ID,
-    week: 2,
-    missionTitle: "현장 페인포인트 리서치 요약",
-    forNewhire: {
-      coachText:
-        "인터뷰·관찰 메모를 구조화해 제출한 점이 좋아요. 다음 주 기능정의에 그대로 이어질 가설을 한 줄로 남겨 두면 흐름이 더 탄탄해집니다.",
-      nextActions: [
-        "가설 1개를 기능정의서 상단에 옮기기",
-        "이해관계자 1명에게 요약본 공유",
-      ],
-    },
-    forHr: {
-      summary:
-        "2주차 리서치 미션 완료. 결과물·실천 모두 확인되며 3주차 기능정의로 자연스럽게 이어질 상태.",
-      progressPct: 100,
-      riskLevel: "stable",
-      interventionHint: "현 페이스 유지. 주간 피드백으로 격려만 전달하면 됩니다.",
-      artifactCount: 1,
-      practicedGuideCount: 3,
-    },
-    generatedAt: "2026-07-31T16:00:00.000Z",
-    hrReviewed: true,
-    hrWeeklyFeedback:
-      "2주차 리서치 정리 잘했어요. 인터뷰에서 나온 ‘반복 FAQ’ 가설을 3주차 기능정의의 첫 문제로 가져가 주세요. 막히면 버디에게 먼저 공유해도 좋습니다.",
-    hrDeliveredAt: "2026-08-01T10:00:00.000Z",
-  },
   {
     id: "fb-emp02-w2",
     assignmentId: "asg-emp02-w2",
@@ -871,18 +826,18 @@ export const SEED_OKR_CARDS: OKRCard[] = [
     month: "2026-08",
     objectives: [
       {
-        title: "AX 인턴으로서 첫 부서 맞춤 자동화 에이전트를 설계한다",
+        title: "입사 첫 달, 현장 관찰로 자동화 기회를 찾아 낸다",
         keyResults: [
-          { text: "부서 인터뷰·자동화 기회 맵 1건 제출", progress: 100 },
-          { text: "AI 도구 PoC·활용 가이드 초안 1건", progress: 70 },
-          { text: "에이전트 기능정의서·와이어프레임 1건", progress: 40 },
+          { text: "부서 관찰·인터뷰 2명 이상 완료", progress: 10 },
+          { text: "자동화·AI 기회 후보 3건 정리", progress: 0 },
+          { text: "1주차 미션 결과물 제출", progress: 0 },
         ],
-        dnaLinked: ["innovation_accel", "value_solve", "goal_sense"],
+        dnaLinked: ["curiosity", "value_solve", "goal_sense"],
       },
     ],
-    status: "approved",
+    status: "draft",
     source: "manual",
-    generatedAt: "2026-08-01T00:00:00.000Z",
+    generatedAt: "2026-08-05T10:00:00.000Z",
   },
   {
     id: "okr-emp02-09",
@@ -1024,8 +979,8 @@ export const CHECKLIST_ITEMS: ChecklistItemDef[] = [
 export const SEED_CHECKLIST_PROGRESS: ChecklistProgress[] = [
   {
     employeeId: DEMO_EMPLOYEE_ID,
-    checkedIds: ["d1-1", "d1-2", "d1-3", "d1-4", "w1-1", "w1-2", "w1-3"],
-    updatedAt: "2026-09-15T09:00:00.000Z",
+    checkedIds: ["d1-1", "d1-2"],
+    updatedAt: "2026-08-05T10:30:00.000Z",
   },
   {
     employeeId: "emp-02",
@@ -1037,22 +992,22 @@ export const SEED_CHECKLIST_PROGRESS: ChecklistProgress[] = [
 export const SEED_CALENDAR_EVENTS: CalendarEvent[] = [
   {
     id: "ev-1",
-    title: "온보딩 킥오프",
-    date: "2026-08-03",
+    title: "입사 Day 1 · 온보딩 킥오프",
+    date: "2026-08-05",
     time: "10:00",
     type: "education",
-    description: "회사 소개 · 핵심가치 · 프로세스 안내",
+    description: "회사 소개 · 핵심가치 · 계정·보안 안내",
   },
   {
     id: "ev-2",
     title: "보안·컴플라이언스 교육",
-    date: "2026-08-04",
+    date: "2026-08-05",
     time: "14:00",
     type: "education",
   },
   {
     id: "ev-3",
-    title: "버디 1:1",
+    title: "버디 첫 인사 1:1",
     date: "2026-08-05",
     time: "11:00",
     type: "meeting",
@@ -1060,40 +1015,42 @@ export const SEED_CALENDAR_EVENTS: CalendarEvent[] = [
   },
   {
     id: "ev-4",
-    title: "팀 온보딩 런치",
+    title: "AX팀 환영 런치",
     date: "2026-08-05",
     time: "12:30",
     type: "social",
   },
   {
     id: "ev-5",
-    title: "AX 미션: 에이전트 기능정의 리뷰",
-    date: "2026-08-08",
-    time: "16:00",
+    title: "1주차 미션: 부서 관찰·인터뷰 킥오프",
+    date: "2026-08-06",
+    time: "15:00",
     type: "education",
     employeeId: DEMO_EMPLOYEE_ID,
+    description: "자동화 기회 발굴을 위한 관찰·인터뷰 일정 잡기",
   },
   {
     id: "ev-6",
-    title: "멘토 체크인",
-    date: "2026-08-12",
+    title: "멘토 첫 체크인",
+    date: "2026-08-07",
     time: "15:00",
     type: "meeting",
     employeeId: DEMO_EMPLOYEE_ID,
   },
   {
     id: "ev-7",
-    title: "월간 OKR 킥오프",
-    date: "2026-08-22",
+    title: "월간 OKR 초안 작성 가이드",
+    date: "2026-08-08",
     time: "10:00",
     type: "review",
   },
   {
     id: "ev-8",
-    title: "배치 앞둔 중간 점검",
-    date: "2026-08-26",
-    time: "14:00",
+    title: "1주차 미션 중간 공유",
+    date: "2026-08-08",
+    time: "16:00",
     type: "review",
+    employeeId: DEMO_EMPLOYEE_ID,
   },
 ];
 
@@ -1129,10 +1086,10 @@ export const SEED_COMMUNITY_POSTS: CommunityPost[] = [
     authorId: DEMO_EMPLOYEE_ID,
     authorName: "정예빈",
     team: "AX팀",
-    title: "AX팀 자기소개",
-    body: "안녕하세요, AX 인턴 정예빈입니다. 부서별 맞춤 AI 에이전트·자동화 설계에 관심 많아요. 인터뷰·테스트에 불러주시면 감사하겠습니다!",
+    title: "입사 첫날 인사드려요",
+    body: "안녕하세요, 오늘 AX팀으로 입사한 인턴 정예빈입니다. 1주차에는 부서 업무를 관찰·인터뷰하며 자동화 기회를 찾아보려 해요. 인터뷰에 불러주시면 감사하겠습니다!",
     anonymous: false,
-    createdAt: "2026-09-02T09:00:00.000Z",
+    createdAt: "2026-08-05T09:15:00.000Z",
   },
   {
     id: "post-4",
@@ -1140,9 +1097,9 @@ export const SEED_COMMUNITY_POSTS: CommunityPost[] = [
     authorId: "org-ax-buddy",
     authorName: "오세진",
     team: "AX팀",
-    body: "환영해요 예빈님! 막히는 거 있으면 슬랙이나 여기로 바로 불러주세요.",
+    body: "환영해요 예빈님! 첫날부터 잘 오실 거예요. 막히는 거 있으면 슬랙이나 여기로 바로 불러주세요.",
     anonymous: false,
-    createdAt: "2026-09-02T09:30:00.000Z",
+    createdAt: "2026-08-05T09:40:00.000Z",
   },
   {
     id: "post-5",
@@ -1163,17 +1120,6 @@ export const SEED_COMMUNITY_POSTS: CommunityPost[] = [
     body: "괜찮아요. 막막함을 솔직히 공유하는 것 자체가 좋은 신호예요. 버디와 마일스톤을 나눠보는 걸 권장합니다.",
     anonymous: false,
     createdAt: "2026-09-11T11:00:00.000Z",
-  },
-  {
-    id: "post-anon-1",
-    channel: "personal",
-    authorId: DEMO_EMPLOYEE_ID,
-    authorName: "익명",
-    peerEmployeeId: DEMO_EMPLOYEE_ID,
-    title: "익명 피드백",
-    body: "온보딩 일정 밀도 완화 및 학습 시간 확보 요청\n버디·멘토 정기 소통 확대 제안\n\n주간 일정에 버퍼 타임을 두고, 핵심 세션과 자율 학습 간격을 재배치\n버디 1:1 주기를 표준화하고 첫 달 체크인 일정을 캘린더에 사전 고정",
-    anonymous: true,
-    createdAt: "2026-08-04T15:20:00.000Z",
   },
 ];
 
@@ -1267,7 +1213,7 @@ export const SEED_ORG_MEMBERS: OrgMember[] = [
     team: "AX팀",
     role: "AX 인턴",
     email: "yebin.jung@interxlab.com",
-    bio: "2026 하반기 입사 · AI Transformation",
+    bio: "2026-08-05 입사 · AX 인턴 1주차",
   },
   {
     id: "org-pm-buddy",

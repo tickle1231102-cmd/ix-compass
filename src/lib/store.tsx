@@ -1115,7 +1115,7 @@ interface StoreValue {
 
 const StoreContext = createContext<StoreValue | null>(null);
 
-const STORAGE_KEY = "ix-compass-state-v9";
+const STORAGE_KEY = "ix-compass-state-v10";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, seedState);

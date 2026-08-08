@@ -35,7 +35,7 @@ export const TOP_NAV: TopNavItem[] = [
       {
         href: "/journey/missions",
         label: "미션 수행",
-        hint: "가이드·결과물·피드백",
+        hint: "미션 · 가이드 · 제출",
         newhireOnly: true,
       },
       {

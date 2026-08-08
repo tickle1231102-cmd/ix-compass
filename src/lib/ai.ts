@@ -222,44 +222,47 @@ export function analyzeTaskContext(
   }
 
   scored.sort((a, b) => b.score - a.score);
-  const keywordDnaIds: DNAId[] = scored.slice(0, 3).map((s) => s.dnaId);
-  const relevantDnaIds: DNAId[] = [...keywordDnaIds];
+  const keywordDnaIds: DNAId[] = scored.map((s) => s.dnaId);
 
-  const fillerDnaIds: DNAId[] = [];
-  if (relevantDnaIds.length < 3) {
-    const fillers = [...weekFallbackDna, ...DEFAULT_DNA_FALLBACK];
-    for (const id of fillers) {
-      if (relevantDnaIds.length >= 3) break;
-      if (!relevantDnaIds.includes(id)) {
-        relevantDnaIds.push(id);
-        fillerDnaIds.push(id);
-      }
-    }
+  // Mission dnaFocus first so practice guides stay aligned with the assignment.
+  const relevantDnaIds: DNAId[] = [];
+  for (const id of weekFallbackDna) {
+    if (relevantDnaIds.length >= 3) break;
+    if (!relevantDnaIds.includes(id)) relevantDnaIds.push(id);
+  }
+  for (const id of keywordDnaIds) {
+    if (relevantDnaIds.length >= 3) break;
+    if (!relevantDnaIds.includes(id)) relevantDnaIds.push(id);
+  }
+  for (const id of DEFAULT_DNA_FALLBACK) {
+    if (relevantDnaIds.length >= 3) break;
+    if (!relevantDnaIds.includes(id)) relevantDnaIds.push(id);
   }
   relevantDnaIds.splice(3);
 
   const shortLabel = (id: DNAId) => DNA_MAP.get(id)?.shortLabel ?? id;
   const uniqueKeywords = Array.from(new Set(matchedKeywords)).slice(0, 5);
+  const missionLabels = weekFallbackDna.map(shortLabel).join(", ");
 
   let rationale: string;
-  if (keywordDnaIds.length > 0 && fillerDnaIds.length === 0) {
+  if (weekFallbackDna.length > 0) {
+    rationale = `이번 미션 초점(${missionLabels})을 우선으로 두고${
+      uniqueKeywords.length > 0
+        ? `, "${uniqueKeywords.join(", ")}" 신호로 보완해`
+        : ""
+    } ${relevantDnaIds
+      .map(shortLabel)
+      .join(", ")} 가이드 3가지를 골랐어요.`;
+  } else if (uniqueKeywords.length > 0) {
     rationale = `입력하신 업무에서 "${uniqueKeywords.join(
       ", "
     )}" 신호가 강해 ${relevantDnaIds
       .map(shortLabel)
-      .join(
-        ", "
-      )} 핵심가치 3가지를 우선순위로 골랐어요. 오늘은 이 3개만 체크하면 됩니다.`;
-  } else if (keywordDnaIds.length > 0 && fillerDnaIds.length > 0) {
-    rationale = `"${uniqueKeywords.join(", ")}" 신호로 ${keywordDnaIds
-      .map(shortLabel)
-      .join(", ")}를 뽑았고, 부족분은 미션 초점 ${fillerDnaIds
-      .map(shortLabel)
-      .join(", ")}로 채워 총 3개 체크리스트를 만들었어요.`;
+      .join(", ")} 핵심가치 3가지를 우선순위로 골랐어요.`;
   } else {
-    rationale = `뚜렷한 업무 키워드가 없어 이번 주 미션 초점(${relevantDnaIds
+    rationale = `뚜렷한 업무 키워드가 없어 기본 초점(${relevantDnaIds
       .map(shortLabel)
-      .join(", ")}) 기준으로 가장 중요한 3가지만 제시했어요.`;
+      .join(", ")}) 기준으로 가이드 3가지를 제시했어요.`;
   }
 
   // Exactly one tip per selected DNA → 3 checklist items.
