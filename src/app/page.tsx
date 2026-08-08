@@ -219,84 +219,76 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        <details className="mt-3 rounded-xl border border-line bg-white">
-          <summary className="cursor-pointer list-none px-3.5 py-2.5 text-xs font-bold text-ink marker:content-none [&::-webkit-details-marker]:hidden">
-            <span className="flex items-center justify-between gap-2">
-              더 보기 · 시나리오 · 자료
-              <span className="font-medium text-ink-soft">펼치기</span>
-            </span>
-          </summary>
-          <div className="grid gap-4 border-t border-line-soft px-3.5 py-3 lg:grid-cols-2">
-            <div>
-              <Eyebrow>오늘의 시나리오</Eyebrow>
-              <h3 className="mt-0.5 text-base font-bold text-ink">
-                {scenario.title}
-              </h3>
-              {attempt || simDone ? (
-                <div className="mt-2 rounded-lg border border-brand/30 bg-brand-softer p-2.5 text-xs text-ink">
-                  {simFeedback || attempt?.aiFeedback}
-                </div>
-              ) : (
-                <div className="mt-2 space-y-1.5">
-                  {scenario.choices.map((c) => (
-                    <label
-                      key={c.id}
-                      className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2 text-xs ${
-                        choiceId === c.id
-                          ? "border-brand bg-brand-softer"
-                          : "border-line hover:border-brand/40"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="scenario"
-                        checked={choiceId === c.id}
-                        onChange={() => setChoiceId(c.id)}
-                        className="mt-0.5 accent-[var(--color-brand)]"
-                      />
-                      {c.label}
-                    </label>
-                  ))}
-                  <PrimaryButton
-                    onClick={runScenario}
-                    disabled={!choiceId}
-                    className="!min-h-9 !px-3 !text-sm"
+        <div className="mt-3 grid gap-4 rounded-xl border border-line bg-white px-3.5 py-3 lg:grid-cols-2">
+          <div>
+            <Eyebrow>오늘의 시나리오</Eyebrow>
+            <h3 className="mt-0.5 text-base font-bold text-ink">
+              {scenario.title}
+            </h3>
+            {attempt || simDone ? (
+              <div className="mt-2 rounded-lg border border-brand/30 bg-brand-softer p-2.5 text-xs text-ink">
+                {simFeedback || attempt?.aiFeedback}
+              </div>
+            ) : (
+              <div className="mt-2 space-y-1.5">
+                {scenario.choices.map((c) => (
+                  <label
+                    key={c.id}
+                    className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2 text-xs ${
+                      choiceId === c.id
+                        ? "border-brand bg-brand-softer"
+                        : "border-line hover:border-brand/40"
+                    }`}
                   >
-                    선택 제출
-                  </PrimaryButton>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <Eyebrow>자료실</Eyebrow>
-              <ul className="mt-1.5 space-y-1.5">
-                {(docs.length > 0 ? docs : searchLibraryDocs("").slice(0, 2)).map(
-                  (doc) => (
-                    <li key={doc.id}>
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block rounded-lg border border-line-soft px-2.5 py-1.5 transition-colors hover:border-brand"
-                      >
-                        <p className="text-sm font-semibold text-ink">
-                          {doc.title}
-                        </p>
-                      </a>
-                    </li>
-                  )
-                )}
-              </ul>
-              <Link
-                href="/resources/tools"
-                className="mt-2 inline-flex text-xs font-semibold text-brand-dark"
-              >
-                자료실 →
-              </Link>
-            </div>
+                    <input
+                      type="radio"
+                      name="scenario"
+                      checked={choiceId === c.id}
+                      onChange={() => setChoiceId(c.id)}
+                      className="mt-0.5 accent-[var(--color-brand)]"
+                    />
+                    {c.label}
+                  </label>
+                ))}
+                <PrimaryButton
+                  onClick={runScenario}
+                  disabled={!choiceId}
+                  className="!min-h-9 !px-3 !text-sm"
+                >
+                  선택 제출
+                </PrimaryButton>
+              </div>
+            )}
           </div>
-        </details>
+
+          <div>
+            <Eyebrow>자료실</Eyebrow>
+            <ul className="mt-1.5 space-y-1.5">
+              {(docs.length > 0 ? docs : searchLibraryDocs("").slice(0, 2)).map(
+                (doc) => (
+                  <li key={doc.id}>
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block rounded-lg border border-line-soft px-2.5 py-1.5 transition-colors hover:border-brand"
+                    >
+                      <p className="text-sm font-semibold text-ink">
+                        {doc.title}
+                      </p>
+                    </a>
+                  </li>
+                )
+              )}
+            </ul>
+            <Link
+              href="/resources/tools"
+              className="mt-2 inline-flex text-xs font-semibold text-brand-dark"
+            >
+              자료실 →
+            </Link>
+          </div>
+        </div>
 
         {me && (
           <p className="mt-3 text-center text-[11px] text-ink-soft">
