@@ -106,19 +106,32 @@ export default function NewhireMissionsPage() {
     ? getCheckInsForAssignment(state, active.id)[0]
     : undefined;
 
-  const canSubmit = files.length > 0 || Boolean(textBody.trim());
+  const guideTotal = latestChecklist?.guides.length ?? 0;
+  /** 실천 완료 = 추천 가이드를 모두 체크했을 때만 */
+  const guideDone = guideTotal > 0 && guidePracticed >= guideTotal;
+  /** 제출 완료 = 실천 완료 후 AI 피드백이 생성된 경우만 */
+  const submitDone = guideDone && Boolean(feedback);
+  const missionComplete = active?.status === "completed";
+  const submitUnlocked = guideDone;
+  const canSubmit =
+    submitUnlocked && (files.length > 0 || Boolean(textBody.trim()));
 
-  // 제출 완료 = AI 피드백까지 낸 뒤 (awaiting_review | completed).
-  // 시드의 중간 체크인만으로는 체크하지 않음.
   const stepDone = useMemo(
     () => ({
       mission: Boolean(active),
-      guide: guidePracticed > 0,
-      submit:
-        active?.status === "awaiting_review" ||
-        active?.status === "completed",
+      guide: guideDone,
+      submit: submitDone,
     }),
-    [active, guidePracticed, active?.status]
+    [active, guideDone, submitDone]
+  );
+
+  const stepLocked = useMemo(
+    () => ({
+      mission: false,
+      guide: false,
+      submit: !submitUnlocked,
+    }),
+    [submitUnlocked]
   );
 
   // Auto-recommend when mission has no checklist yet
@@ -146,11 +159,15 @@ export default function NewhireMissionsPage() {
         ? hash
         : null;
       if (!id) return;
-      if (id === "mission" || id === "guide" || id === "submit") {
-        setFocusStep(id);
+      let target = id;
+      if (id === "submit" && !guideDone) {
+        target = "guide";
+      }
+      if (target === "mission" || target === "guide" || target === "submit") {
+        setFocusStep(target);
       }
       const run = (attempt: number) => {
-        const el = document.getElementById(id!);
+        const el = document.getElementById(target!);
         if (el) {
           el.scrollIntoView({ behavior, block: "start" });
           return;
@@ -166,7 +183,7 @@ export default function NewhireMissionsPage() {
     const onHash = () => scrollToHash("smooth");
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
-  }, [active?.id, latestChecklist?.id]);
+  }, [active?.id, latestChecklist?.id, guideDone]);
 
   useEffect(() => {
     if (!justSubmitted || !feedback) return;
@@ -185,13 +202,15 @@ export default function NewhireMissionsPage() {
   if (!me) return null;
 
   function scrollToStep(id: (typeof STEPS)[number]["id"]) {
-    setFocusStep(id);
-    const el = document.getElementById(id);
+    const target =
+      id === "submit" && !guideDone ? ("guide" as const) : id;
+    setFocusStep(target);
+    const el = document.getElementById(target);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", `#${id}`);
+      window.history.replaceState(null, "", `#${target}`);
     }
   }
 
@@ -227,6 +246,11 @@ export default function NewhireMissionsPage() {
 
   async function handleSubmitForFeedback() {
     if (!active) return;
+    if (!guideDone) {
+      setSubmitError("실천 항목을 모두 체크한 뒤 제출할 수 있어요.");
+      scrollToStep("guide");
+      return;
+    }
     const textAtt = makeTextAttachment(textBody);
     const attachments = [...files, ...(textAtt ? [textAtt] : [])];
     if (attachments.length === 0) {
@@ -263,6 +287,7 @@ export default function NewhireMissionsPage() {
         >
           {STEPS.map((step, i) => {
             const done = stepDone[step.id];
+            const locked = stepLocked[step.id];
             const focused = focusStep === step.id;
             return (
               <button
@@ -270,21 +295,29 @@ export default function NewhireMissionsPage() {
                 type="button"
                 onClick={() => scrollToStep(step.id)}
                 aria-current={focused ? "step" : undefined}
+                aria-disabled={locked || undefined}
+                title={
+                  locked ? "실천을 먼저 완료해 주세요" : undefined
+                }
                 className={`flex min-h-8 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-xs font-bold transition-colors ${
-                  focused
-                    ? "bg-brand-soft text-brand-dark ring-1 ring-brand/30"
-                    : done
-                      ? "bg-stable-soft text-stable"
-                      : "text-ink-soft hover:bg-line-soft hover:text-ink"
+                  locked
+                    ? "cursor-not-allowed text-ink-faint opacity-60"
+                    : focused
+                      ? "bg-brand-soft text-brand-dark ring-1 ring-brand/30"
+                      : done
+                        ? "bg-stable-soft text-stable"
+                        : "text-ink-soft hover:bg-line-soft hover:text-ink"
                 }`}
               >
                 <span
                   className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
                     done
                       ? "bg-stable text-white"
-                      : focused
-                        ? "bg-brand text-white"
-                        : "bg-line-soft text-ink-soft"
+                      : locked
+                        ? "bg-line text-ink-faint"
+                        : focused
+                          ? "bg-brand text-white"
+                          : "bg-line-soft text-ink-soft"
                   }`}
                 >
                   {done ? "✓" : i + 1}
@@ -358,9 +391,12 @@ export default function NewhireMissionsPage() {
               <h3 className="min-w-0 flex-1 truncate text-base font-bold text-ink">
                 {active.title}
               </h3>
-              <p className="shrink-0 text-lg font-bold tabular-nums text-ink">
-                {progressPct}%
-              </p>
+              <div className="shrink-0 text-right">
+                <p className="text-[10px] font-medium text-ink-soft">전체 진행</p>
+                <p className="text-lg font-bold tabular-nums leading-none text-ink">
+                  {progressPct}%
+                </p>
+              </div>
             </div>
             <p className="mt-1 line-clamp-2 text-xs text-ink-soft">
               {active.description}
@@ -379,8 +415,12 @@ export default function NewhireMissionsPage() {
               <ProgressBar value={progressPct} />
             </div>
             <div className="mt-2 flex justify-end">
-              <PrimaryButton onClick={() => scrollToStep("guide")}>
-                실천하러 가기
+              <PrimaryButton
+                onClick={() =>
+                  scrollToStep(guideDone ? "submit" : "guide")
+                }
+              >
+                {guideDone ? "제출하러 가기" : "실천하러 가기"}
               </PrimaryButton>
             </div>
           </Card>
@@ -478,112 +518,153 @@ export default function NewhireMissionsPage() {
             )}
 
             <div className="mt-2 flex justify-end">
-              <PrimaryButton onClick={() => scrollToStep("submit")}>
-                제출하러 가기
+              <PrimaryButton
+                onClick={() => scrollToStep("submit")}
+                disabled={!guideDone}
+              >
+                {guideDone ? "제출하러 가기" : "실천을 모두 체크해 주세요"}
               </PrimaryButton>
             </div>
           </Card>
 
           <Card id="submit" className={`${STEP_SCROLL_MT} !p-2.5`}>
-            <h4 className="text-sm font-bold text-ink">제출하기</h4>
-
-            <div className="mt-2">
-              <input
-                ref={fileInputRef}
-                id="mission-file-input"
-                type="file"
-                multiple
-                accept={ACCEPT_DELIVERABLES}
-                className="sr-only"
-                onChange={(e) => handleFilesSelected(e.target.files)}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                aria-controls="mission-file-input"
-                className={`w-full min-h-8 rounded-lg border border-dashed px-3 py-2 text-center text-xs font-semibold transition-colors hover:border-brand hover:text-brand-dark ${
-                  submitError
-                    ? "border-alert text-alert"
-                    : "border-line text-ink-soft"
-                }`}
-              >
-                파일 첨부
-                {files.length > 0 ? ` · ${files.length}` : ""}
-              </button>
-            </div>
-
-            {files.length > 0 && (
-              <ul className="mt-1.5 space-y-1" aria-label="첨부된 파일">
-                {files.map((f) => (
-                  <li
-                    key={f.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-line-soft px-2 py-1 text-xs"
-                  >
-                    <span className="truncate font-semibold text-ink">
-                      {f.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(f.id)}
-                      className="shrink-0 font-semibold text-alert"
-                    >
-                      제거
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <textarea
-              value={textBody}
-              onChange={(e) => {
-                setTextBody(e.target.value);
-                if (submitError) setSubmitError("");
-              }}
-              rows={3}
-              aria-invalid={Boolean(submitError) || undefined}
-              aria-describedby={submitError ? deliverableErrorId : undefined}
-              placeholder="텍스트 결과물"
-              className={`mt-1.5 w-full rounded-lg border px-2.5 py-1.5 text-sm focus:border-brand ${
-                submitError ? "border-alert" : "border-line"
-              }`}
-            />
-
-            <textarea
-              value={privateNote}
-              onChange={(e) => setPrivateNote(e.target.value)}
-              rows={2}
-              placeholder="프라이빗 노트 (인사 비공개)"
-              className="mt-1.5 w-full rounded-lg border border-line px-2.5 py-1.5 text-sm focus:border-brand"
-            />
-
-            {submitError && (
-              <p
-                id={deliverableErrorId}
-                className="mt-1.5 text-xs font-medium text-alert"
-                role="alert"
-              >
-                {submitError}
-              </p>
-            )}
-
-            <div className="mt-2">
-              <PrimaryButton
-                onClick={handleSubmitForFeedback}
-                disabled={!canSubmit}
-                busy={submitting}
-              >
-                {submitting ? "제출 중…" : "제출하기"}
-              </PrimaryButton>
-            </div>
-
-            {latestCheckIn?.attachments &&
-              latestCheckIn.attachments.length > 0 && (
-                <p className="mt-1.5 truncate text-[11px] text-ink-soft">
-                  최근:{" "}
-                  {latestCheckIn.attachments.map((a) => a.name).join(", ")}
-                </p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-sm font-bold text-ink">제출하기</h4>
+              {submitDone && (
+                <Tag tone={missionComplete ? "stable" : "watch"}>
+                  {missionComplete
+                    ? "미션 완료"
+                    : "제출됨 · 인사 피드백 대기"}
+                </Tag>
               )}
+            </div>
+
+            {!submitUnlocked ? (
+              <div className="mt-2 rounded-lg border border-dashed border-line bg-line-soft/40 px-3 py-3">
+                <p className="text-xs font-semibold text-ink-soft">
+                  실천을 먼저 완료해 주세요
+                </p>
+                <p className="mt-1 text-[11px] text-ink-faint">
+                  추천 가이드를 모두 체크하면 제출할 수 있어요.
+                  {guideTotal > 0
+                    ? ` (${guidePracticed}/${guideTotal})`
+                    : ""}
+                </p>
+                <div className="mt-2">
+                  <PrimaryButton onClick={() => scrollToStep("guide")}>
+                    실천으로 이동
+                  </PrimaryButton>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="mt-2">
+                  <input
+                    ref={fileInputRef}
+                    id="mission-file-input"
+                    type="file"
+                    multiple
+                    accept={ACCEPT_DELIVERABLES}
+                    className="sr-only"
+                    onChange={(e) => handleFilesSelected(e.target.files)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-controls="mission-file-input"
+                    className={`w-full min-h-8 rounded-lg border border-dashed px-3 py-2 text-center text-xs font-semibold transition-colors hover:border-brand hover:text-brand-dark ${
+                      submitError
+                        ? "border-alert text-alert"
+                        : "border-line text-ink-soft"
+                    }`}
+                  >
+                    파일 첨부
+                    {files.length > 0 ? ` · ${files.length}` : ""}
+                  </button>
+                </div>
+
+                {files.length > 0 && (
+                  <ul className="mt-1.5 space-y-1" aria-label="첨부된 파일">
+                    {files.map((f) => (
+                      <li
+                        key={f.id}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-line-soft px-2 py-1 text-xs"
+                      >
+                        <span className="truncate font-semibold text-ink">
+                          {f.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(f.id)}
+                          className="shrink-0 font-semibold text-alert"
+                        >
+                          제거
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <textarea
+                  value={textBody}
+                  onChange={(e) => {
+                    setTextBody(e.target.value);
+                    if (submitError) setSubmitError("");
+                  }}
+                  rows={3}
+                  aria-invalid={Boolean(submitError) || undefined}
+                  aria-describedby={
+                    submitError ? deliverableErrorId : undefined
+                  }
+                  placeholder="텍스트 결과물"
+                  className={`mt-1.5 w-full rounded-lg border px-2.5 py-1.5 text-sm focus:border-brand ${
+                    submitError ? "border-alert" : "border-line"
+                  }`}
+                />
+
+                <textarea
+                  value={privateNote}
+                  onChange={(e) => setPrivateNote(e.target.value)}
+                  rows={2}
+                  placeholder="프라이빗 노트 (인사 비공개)"
+                  className="mt-1.5 w-full rounded-lg border border-line px-2.5 py-1.5 text-sm focus:border-brand"
+                />
+
+                {submitError && (
+                  <p
+                    id={deliverableErrorId}
+                    className="mt-1.5 text-xs font-medium text-alert"
+                    role="alert"
+                  >
+                    {submitError}
+                  </p>
+                )}
+
+                <div className="mt-2">
+                  <PrimaryButton
+                    onClick={handleSubmitForFeedback}
+                    disabled={!canSubmit}
+                    busy={submitting}
+                  >
+                    {submitting
+                      ? "제출 중…"
+                      : submitDone
+                        ? "다시 제출하기"
+                        : "제출하기"}
+                  </PrimaryButton>
+                </div>
+
+                {latestCheckIn?.attachments &&
+                  latestCheckIn.attachments.length > 0 && (
+                    <p className="mt-1.5 truncate text-[11px] text-ink-soft">
+                      최근:{" "}
+                      {latestCheckIn.attachments
+                        .map((a) => a.name)
+                        .join(", ")}
+                    </p>
+                  )}
+              </>
+            )}
           </Card>
 
           {justSubmitted && feedback && (
@@ -591,11 +672,11 @@ export default function NewhireMissionsPage() {
               role="status"
               className="rounded-lg border border-stable/30 bg-stable-soft px-3 py-2 text-xs font-semibold text-stable"
             >
-              피드백 생성 완료
+              제출됨 · AI 피드백 생성 완료 · 인사 피드백 대기
             </p>
           )}
 
-          {feedback && (
+          {feedback && guideDone && (
             <div id="feedback" ref={feedbackRef}>
               <Card className="!p-2.5">
                 <div className="flex items-center justify-between gap-2">
