@@ -175,6 +175,8 @@ type Action =
       type: "MARK_MISSION_FEEDBACK_REVIEWED";
       id: string;
       hrInternalNote?: string;
+      /** Weekly note delivered to the newhire (미션 피드백 inbox). */
+      hrWeeklyFeedback?: string;
     }
   | { type: "CREATE_REVIEW_PACKET"; employeeId: string; period: "3개월" | "6개월" }
   | { type: "RESET" }
@@ -631,12 +633,17 @@ function reducer(state: State, action: Action): State {
     case "MARK_MISSION_FEEDBACK_REVIEWED": {
       const feedback = state.missionFeedbacks.find((f) => f.id === action.id);
       if (!feedback) return state;
+      const weekly = action.hrWeeklyFeedback?.trim();
       const missionFeedbacks = state.missionFeedbacks.map((f) =>
         f.id === action.id
           ? {
               ...f,
               hrReviewed: true,
               hrInternalNote: action.hrInternalNote?.trim() || f.hrInternalNote,
+              hrWeeklyFeedback: weekly || f.hrWeeklyFeedback,
+              hrDeliveredAt: weekly
+                ? new Date().toISOString()
+                : f.hrDeliveredAt,
             }
           : f
       );
@@ -1051,7 +1058,11 @@ interface StoreValue {
     generateFeedback?: boolean;
   }) => void;
   generateMissionFeedbackFor: (assignmentId: string) => void;
-  markMissionFeedbackReviewed: (id: string, hrInternalNote?: string) => void;
+  markMissionFeedbackReviewed: (
+    id: string,
+    hrInternalNote?: string,
+    hrWeeklyFeedback?: string
+  ) => void;
   createReviewPacket: (employeeId: string, period: "3개월" | "6개월") => void;
   resetDemo: () => void;
   toggleChecklistItem: (itemId: string) => void;
@@ -1104,7 +1115,7 @@ interface StoreValue {
 
 const StoreContext = createContext<StoreValue | null>(null);
 
-const STORAGE_KEY = "ix-compass-state-v7";
+const STORAGE_KEY = "ix-compass-state-v8";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, seedState);
@@ -1210,11 +1221,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const markMissionFeedbackReviewed = useCallback(
-    (id: string, hrInternalNote?: string) =>
+    (id: string, hrInternalNote?: string, hrWeeklyFeedback?: string) =>
       dispatch({
         type: "MARK_MISSION_FEEDBACK_REVIEWED",
         id,
         hrInternalNote,
+        hrWeeklyFeedback,
       }),
     []
   );

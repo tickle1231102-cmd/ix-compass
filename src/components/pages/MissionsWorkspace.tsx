@@ -22,7 +22,6 @@ import {
 import type { MissionAttachment } from "@/lib/types";
 import {
   Card,
-  Eyebrow,
   PrimaryButton,
   ProgressBar,
   RiskTag,
@@ -65,10 +64,15 @@ export default function NewhireMissionsPage() {
   const [taskInput, setTaskInput] = useState("");
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [freeGuideOpen, setFreeGuideOpen] = useState(false);
+  const [focusStep, setFocusStep] = useState<(typeof STEPS)[number]["id"]>(
+    "mission"
+  );
   const autoRanFor = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const feedbackRef = useRef<HTMLDivElement>(null);
   const deliverableErrorId = "mission-deliverable-error";
+
+  const STEP_SCROLL_MT = "!scroll-mt-32";
 
   useEffect(() => {
     setPrivateNote("");
@@ -134,21 +138,39 @@ export default function NewhireMissionsPage() {
   // Hash deep-link (#guide | #submit | #mission | #feedback)
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const hash = window.location.hash.replace("#", "");
-    if (!hash) return;
-    const id = ["mission", "guide", "submit", "feedback"].includes(hash)
-      ? hash
-      : null;
-    if (!id) return;
-    requestAnimationFrame(() => {
-      document
-        .getElementById(id)
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }, [active?.id]);
+
+    function scrollToHash(behavior: ScrollBehavior = "smooth") {
+      const hash = window.location.hash.replace("#", "");
+      if (!hash) return;
+      const id = ["mission", "guide", "submit", "feedback"].includes(hash)
+        ? hash
+        : null;
+      if (!id) return;
+      if (id === "mission" || id === "guide" || id === "submit") {
+        setFocusStep(id);
+      }
+      const run = (attempt: number) => {
+        const el = document.getElementById(id!);
+        if (el) {
+          el.scrollIntoView({ behavior, block: "start" });
+          return;
+        }
+        if (attempt < 8) {
+          window.setTimeout(() => run(attempt + 1), 50);
+        }
+      };
+      requestAnimationFrame(() => run(0));
+    }
+
+    scrollToHash("smooth");
+    const onHash = () => scrollToHash("smooth");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, [active?.id, latestChecklist?.id]);
 
   useEffect(() => {
     if (!justSubmitted || !feedback) return;
+    setFocusStep("submit");
     feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [justSubmitted, feedback?.id]);
 
@@ -162,10 +184,15 @@ export default function NewhireMissionsPage() {
 
   if (!me) return null;
 
-  function scrollToStep(id: string) {
-    document
-      .getElementById(id)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  function scrollToStep(id: (typeof STEPS)[number]["id"]) {
+    setFocusStep(id);
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `#${id}`);
+    }
   }
 
   async function handleFilesSelected(list: FileList | null) {
@@ -228,35 +255,36 @@ export default function NewhireMissionsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Eyebrow>미션 수행</Eyebrow>
-        <h3 className="mt-1 text-lg font-bold text-ink">이번 주 미션</h3>
-      </div>
-
+    <div className="space-y-2.5">
       {active && (
         <nav
           aria-label="미션 수행 단계"
-          className="sticky top-[4.25rem] z-20 -mx-1 flex gap-1 rounded-2xl border border-line bg-white/95 p-1.5 shadow-sm backdrop-blur"
+          className="sticky top-[4.25rem] z-20 flex gap-1 rounded-xl border border-line bg-white/95 p-1 shadow-sm backdrop-blur"
         >
           {STEPS.map((step, i) => {
             const done = stepDone[step.id];
+            const focused = focusStep === step.id;
             return (
               <button
                 key={step.id}
                 type="button"
                 onClick={() => scrollToStep(step.id)}
-                className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-bold transition-colors sm:text-sm ${
-                  done
-                    ? "bg-stable-soft text-stable"
-                    : "text-ink-soft hover:bg-line-soft hover:text-ink"
+                aria-current={focused ? "step" : undefined}
+                className={`flex min-h-8 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-xs font-bold transition-colors ${
+                  focused
+                    ? "bg-brand-soft text-brand-dark ring-1 ring-brand/30"
+                    : done
+                      ? "bg-stable-soft text-stable"
+                      : "text-ink-soft hover:bg-line-soft hover:text-ink"
                 }`}
               >
                 <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${
+                  className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
                     done
                       ? "bg-stable text-white"
-                      : "bg-line-soft text-ink-soft"
+                      : focused
+                        ? "bg-brand text-white"
+                        : "bg-line-soft text-ink-soft"
                   }`}
                 >
                   {done ? "✓" : i + 1}
@@ -271,22 +299,18 @@ export default function NewhireMissionsPage() {
       {!active ? (
         <>
           <Card id="mission">
-            <p className="text-sm text-ink-soft">
-              아직 배정된 진행 중 미션이 없어요. 인사팀 배정을 기다려 주세요.
-            </p>
+            <p className="text-sm text-ink-soft">배정된 미션이 없어요.</p>
             {all.length > 0 && (
-              <ul className="mt-4 space-y-2">
+              <ul className="mt-2 space-y-1">
                 {all.map((a) => (
                   <li
                     key={a.id}
-                    className="rounded-xl border border-line-soft px-3 py-2 text-sm"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-line-soft px-2.5 py-1.5 text-sm"
                   >
-                    <span className="font-semibold text-ink">
+                    <span className="truncate font-semibold text-ink">
                       {a.week}주차 · {a.title}
                     </span>
-                    <Tag tone="neutral" className="ml-2">
-                      {a.status}
-                    </Tag>
+                    <Tag tone="neutral">{a.status}</Tag>
                   </li>
                 ))}
               </ul>
@@ -297,141 +321,129 @@ export default function NewhireMissionsPage() {
             <button
               type="button"
               onClick={() => setFreeGuideOpen((o) => !o)}
-              className="flex min-h-11 w-full items-center justify-between text-left"
+              className="flex min-h-8 w-full items-center justify-between text-left"
             >
-              <span className="font-bold text-ink">자유 실천 체크</span>
-              <span className="text-sm text-ink-soft">
+              <span className="text-sm font-bold text-ink">자유 실천</span>
+              <span className="text-xs text-ink-soft">
                 {freeGuideOpen ? "접기" : "펼치기"}
               </span>
             </button>
             {freeGuideOpen && (
-              <div className="mt-4 space-y-3">
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input
-                    value={taskInput}
-                    onChange={(e) => setTaskInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleRunChecklist();
-                    }}
-                    placeholder="오늘 할 일을 적어 주세요"
-                    className="flex-1 rounded-xl border border-line px-3.5 py-2.5 text-sm text-ink outline-none focus:border-brand"
-                  />
-                  <PrimaryButton
-                    onClick={() => handleRunChecklist()}
-                    disabled={!taskInput.trim()}
-                  >
-                    추천 받기
-                  </PrimaryButton>
-                </div>
+              <div className="mt-2 flex flex-col gap-1.5 sm:flex-row">
+                <input
+                  value={taskInput}
+                  onChange={(e) => setTaskInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRunChecklist();
+                  }}
+                  placeholder="오늘 할 일"
+                  className="flex-1 rounded-lg border border-line px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand"
+                />
+                <PrimaryButton
+                  onClick={() => handleRunChecklist()}
+                  disabled={!taskInput.trim()}
+                >
+                  추천
+                </PrimaryButton>
               </div>
             )}
           </Card>
         </>
       ) : (
         <>
-          <Card id="mission">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Tag tone="brand">{active.week}주차</Tag>
-                  {active.priority === "high" && (
-                    <Tag tone="watch">우선</Tag>
-                  )}
-                </div>
-                <h3 className="mt-2 text-xl font-bold text-ink">
-                  {active.title}
-                </h3>
-                <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-ink-soft">
-                  {active.description}
-                </p>
-                <p className="mt-2 text-xs text-ink-soft">
-                  마감 {new Date(active.dueAt).toLocaleDateString("ko-KR")}
-                  {active.dnaFocus.length > 0 && (
-                    <>
-                      {" · "}
-                      {active.dnaFocus
-                        .map((id) => DNA_MAP.get(id)?.shortLabel ?? id)
-                        .join(", ")}
-                    </>
-                  )}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-ink-soft">진행률</p>
-                <p className="text-2xl font-bold text-ink">{progressPct}%</p>
-              </div>
+          <Card id="mission" className={`${STEP_SCROLL_MT} !p-2.5`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Tag tone="brand">{active.week}주차</Tag>
+              {active.priority === "high" && <Tag tone="watch">우선</Tag>}
+              <h3 className="min-w-0 flex-1 truncate text-base font-bold text-ink">
+                {active.title}
+              </h3>
+              <p className="shrink-0 text-lg font-bold tabular-nums text-ink">
+                {progressPct}%
+              </p>
             </div>
-            <div className="mt-3">
+            <p className="mt-1 line-clamp-2 text-xs text-ink-soft">
+              {active.description}
+              {" · 마감 "}
+              {new Date(active.dueAt).toLocaleDateString("ko-KR")}
+              {active.dnaFocus.length > 0 && (
+                <>
+                  {" · "}
+                  {active.dnaFocus
+                    .map((id) => DNA_MAP.get(id)?.shortLabel ?? id)
+                    .join(", ")}
+                </>
+              )}
+            </p>
+            <div className="mt-1.5">
               <ProgressBar value={progressPct} />
+            </div>
+            <div className="mt-2 flex justify-end">
+              <PrimaryButton onClick={() => scrollToStep("guide")}>
+                실천하러 가기
+              </PrimaryButton>
             </div>
           </Card>
 
-          <Card id="guide">
-            <Eyebrow>실천 체크</Eyebrow>
-            <h4 className="mt-1 font-bold text-ink">AI로 실천하기</h4>
+          <Card id="guide" className={`${STEP_SCROLL_MT} !p-2.5`}>
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-sm font-bold text-ink">실천</h4>
+              <div className="flex items-center gap-2">
+                {latestChecklist && (
+                  <span className="text-[11px] text-ink-soft">
+                    {guidePracticed}/{latestChecklist.guides.length}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setEditTaskOpen((o) => !o)}
+                  className="text-[11px] font-semibold text-brand-dark"
+                >
+                  {editTaskOpen ? "닫기" : "추천 수정"}
+                </button>
+              </div>
+            </div>
 
-            <details
-              className="mt-3"
-              open={editTaskOpen}
-              onToggle={(e) =>
-                setEditTaskOpen((e.target as HTMLDetailsElement).open)
-              }
-            >
-              <summary className="cursor-pointer list-none text-sm font-semibold text-brand-dark marker:content-none [&::-webkit-details-marker]:hidden">
-                오늘 할 일 수정
-              </summary>
-              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            {editTaskOpen && (
+              <div className="mt-1.5 flex flex-col gap-1.5 sm:flex-row">
                 <input
                   value={taskInput}
                   onChange={(e) => setTaskInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleRunChecklist(active.id);
                   }}
-                  className="flex-1 rounded-xl border border-line px-3.5 py-2.5 text-sm text-ink outline-none focus:border-brand"
+                  className="flex-1 rounded-lg border border-line px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand"
                 />
                 <PrimaryButton
                   onClick={() => handleRunChecklist(active.id)}
                   disabled={!taskInput.trim()}
                 >
-                  {latestChecklist ? "다시 추천" : "추천 받기"}
+                  {latestChecklist ? "다시 추천" : "추천"}
                 </PrimaryButton>
               </div>
-            </details>
+            )}
 
             {!latestChecklist && (
-              <div className="mt-4">
+              <div className="mt-2">
                 <PrimaryButton
                   onClick={() => handleRunChecklist(active.id)}
                   disabled={!taskInput.trim()}
                 >
-                  추천 받기
+                  추천
                 </PrimaryButton>
               </div>
             )}
 
             {latestChecklist && (
-              <div className="mt-4 rounded-xl border border-line-soft bg-line-soft/50 p-4">
-                <div className="flex flex-wrap gap-1.5">
-                  {latestChecklist.relevantDnaIds.map((id) => {
-                    const dna = DNA_MAP.get(id);
-                    return (
-                      <Tag key={id} tone="brand">
-                        {dna?.emoji ? `${dna.emoji} ` : ""}
-                        {dna?.label ?? id}
-                      </Tag>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  {latestChecklist.guides.map((guide) => {
-                    const done = latestChecklist.practicedGuideIds.includes(
-                      guide.id
-                    );
-                    return (
+              <ul className="mt-2 space-y-1">
+                {latestChecklist.guides.map((guide) => {
+                  const done = latestChecklist.practicedGuideIds.includes(
+                    guide.id
+                  );
+                  return (
+                    <li key={guide.id}>
                       <label
-                        key={guide.id}
-                        className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 text-sm transition-colors ${
+                        className={`flex cursor-pointer items-start gap-2 rounded-lg border px-2 py-1.5 text-sm transition-colors ${
                           done
                             ? "border-stable/30 bg-stable-soft/60 text-ink-soft"
                             : "border-line bg-white text-ink hover:border-brand/40"
@@ -443,33 +455,39 @@ export default function NewhireMissionsPage() {
                           onChange={() =>
                             practiceGuide(latestChecklist.id, guide.id)
                           }
-                          className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-brand)]"
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[var(--color-brand)]"
                         />
-                        <span className={done ? "line-through" : ""}>
+                        <span
+                          className={`min-w-0 flex-1 leading-snug ${
+                            done ? "line-through" : ""
+                          }`}
+                        >
                           {guide.text}
                         </span>
-                        <Tag tone="neutral" className="ml-auto shrink-0">
-                          {DNA_MAP.get(guide.dnaId)?.emoji
-                            ? `${DNA_MAP.get(guide.dnaId)?.emoji} `
-                            : ""}
+                        <Tag
+                          tone="neutral"
+                          className="ml-auto shrink-0 !px-1.5 !py-0.5 !text-[10px]"
+                        >
                           {DNA_MAP.get(guide.dnaId)?.shortLabel}
                         </Tag>
                       </label>
-                    );
-                  })}
-                </div>
-              </div>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
+
+            <div className="mt-2 flex justify-end">
+              <PrimaryButton onClick={() => scrollToStep("submit")}>
+                제출하러 가기
+              </PrimaryButton>
+            </div>
           </Card>
 
-          <Card id="submit">
-            <Eyebrow>결과물</Eyebrow>
-            <h4 className="mt-1 font-bold text-ink">결과물 제출</h4>
-            <p className="mt-1 text-sm text-ink-soft">
-              다시 제출하면 이전 제출을 대체하고 새 피드백을 생성합니다.
-            </p>
+          <Card id="submit" className={`${STEP_SCROLL_MT} !p-2.5`}>
+            <h4 className="text-sm font-bold text-ink">제출하기</h4>
 
-            <div className="mt-4">
+            <div className="mt-2">
               <input
                 ref={fileInputRef}
                 id="mission-file-input"
@@ -483,34 +501,31 @@ export default function NewhireMissionsPage() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 aria-controls="mission-file-input"
-                className={`w-full min-h-11 rounded-xl border border-dashed px-4 py-6 text-center text-sm font-semibold transition-colors hover:border-brand hover:text-brand-dark ${
+                className={`w-full min-h-8 rounded-lg border border-dashed px-3 py-2 text-center text-xs font-semibold transition-colors hover:border-brand hover:text-brand-dark ${
                   submitError
                     ? "border-alert text-alert"
                     : "border-line text-ink-soft"
                 }`}
               >
-                파일 첨부 (PDF · Word · 텍스트)
-                {files.length > 0 ? ` · ${files.length}개 선택됨` : ""}
+                파일 첨부
+                {files.length > 0 ? ` · ${files.length}` : ""}
               </button>
             </div>
 
             {files.length > 0 && (
-              <ul className="mt-3 space-y-2" aria-label="첨부된 파일">
+              <ul className="mt-1.5 space-y-1" aria-label="첨부된 파일">
                 {files.map((f) => (
                   <li
                     key={f.id}
-                    className="flex items-center justify-between gap-2 rounded-xl border border-line-soft px-3 py-2 text-sm"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-line-soft px-2 py-1 text-xs"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-ink">{f.name}</p>
-                      <p className="text-xs text-ink-soft">
-                        {f.kind.toUpperCase()} · {formatFileSize(f.size)}
-                      </p>
-                    </div>
+                    <span className="truncate font-semibold text-ink">
+                      {f.name}
+                    </span>
                     <button
                       type="button"
                       onClick={() => removeFile(f.id)}
-                      className="min-h-11 shrink-0 px-2 text-xs font-semibold text-alert"
+                      className="shrink-0 font-semibold text-alert"
                     >
                       제거
                     </button>
@@ -519,118 +534,94 @@ export default function NewhireMissionsPage() {
               </ul>
             )}
 
-            <label className="mt-4 block">
-              <span className="text-xs font-medium text-ink-soft">
-                텍스트 결과물 (선택)
-              </span>
-              <textarea
-                value={textBody}
-                onChange={(e) => {
-                  setTextBody(e.target.value);
-                  if (submitError) setSubmitError("");
-                }}
-                rows={5}
-                aria-invalid={Boolean(submitError) || undefined}
-                aria-describedby={submitError ? deliverableErrorId : undefined}
-                placeholder="미션 결과 요약, 회고, 산출물 본문 등을 붙여 넣으세요."
-                className={`mt-1 w-full rounded-xl border px-3.5 py-2.5 text-sm focus:border-brand ${
-                  submitError ? "border-alert" : "border-line"
-                }`}
-              />
-            </label>
+            <textarea
+              value={textBody}
+              onChange={(e) => {
+                setTextBody(e.target.value);
+                if (submitError) setSubmitError("");
+              }}
+              rows={3}
+              aria-invalid={Boolean(submitError) || undefined}
+              aria-describedby={submitError ? deliverableErrorId : undefined}
+              placeholder="텍스트 결과물"
+              className={`mt-1.5 w-full rounded-lg border px-2.5 py-1.5 text-sm focus:border-brand ${
+                submitError ? "border-alert" : "border-line"
+              }`}
+            />
 
-            <label className="mt-3 block">
-              <span className="text-xs font-medium text-ink-soft">
-                막힌 점 · AI 전용 프라이빗 노트 (인사팀 비공개)
-              </span>
-              <textarea
-                value={privateNote}
-                onChange={(e) => setPrivateNote(e.target.value)}
-                rows={2}
-                placeholder="솔직한 어려움은 여기에만 남겨 주세요."
-                className="mt-1 w-full rounded-xl border border-line px-3.5 py-2.5 text-sm focus:border-brand"
-              />
-            </label>
+            <textarea
+              value={privateNote}
+              onChange={(e) => setPrivateNote(e.target.value)}
+              rows={2}
+              placeholder="프라이빗 노트 (인사 비공개)"
+              className="mt-1.5 w-full rounded-lg border border-line px-2.5 py-1.5 text-sm focus:border-brand"
+            />
 
             {submitError && (
               <p
                 id={deliverableErrorId}
-                className="mt-3 text-sm font-medium text-alert"
+                className="mt-1.5 text-xs font-medium text-alert"
                 role="alert"
               >
                 {submitError}
               </p>
             )}
 
-            <div className="mt-4">
+            <div className="mt-2">
               <PrimaryButton
                 onClick={handleSubmitForFeedback}
                 disabled={!canSubmit}
                 busy={submitting}
               >
-                {submitting ? "제출 중…" : "제출하고 AI 피드백 받기"}
+                {submitting ? "제출 중…" : "제출하기"}
               </PrimaryButton>
             </div>
 
             {latestCheckIn?.attachments &&
               latestCheckIn.attachments.length > 0 && (
-                <div className="mt-4 rounded-xl border border-line-soft bg-line-soft/40 px-3 py-2.5">
-                  <p className="text-xs font-semibold text-ink-soft">
-                    최근 제출 결과물
-                  </p>
-                  <ul className="mt-1.5 space-y-1">
-                    {latestCheckIn.attachments.map((a) => (
-                      <li key={a.id} className="text-xs text-ink-soft">
-                        · {a.name} ({a.kind}, {formatFileSize(a.size)})
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <p className="mt-1.5 truncate text-[11px] text-ink-soft">
+                  최근:{" "}
+                  {latestCheckIn.attachments.map((a) => a.name).join(", ")}
+                </p>
               )}
           </Card>
 
           {justSubmitted && feedback && (
-            <div
+            <p
               role="status"
-              className="rounded-xl border border-stable/30 bg-stable-soft px-4 py-3 text-sm font-semibold text-stable"
+              className="rounded-lg border border-stable/30 bg-stable-soft px-3 py-2 text-xs font-semibold text-stable"
             >
-              AI 피드백이 생성됐어요. 아래에서 확인하세요.
-            </div>
+              피드백 생성 완료
+            </p>
           )}
 
           {feedback && (
             <div id="feedback" ref={feedbackRef}>
-              <Card>
-                <Eyebrow>AI 피드백</Eyebrow>
-                <h4 className="mt-1 font-bold text-ink">코치 피드백</h4>
-                <p className="mt-2 text-sm leading-relaxed text-ink">
+              <Card className="!p-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-sm font-bold text-ink">피드백</h4>
+                  <RiskTag level={feedback.forHr.riskLevel} />
+                </div>
+                <p className="mt-1.5 text-sm leading-snug text-ink">
                   {feedback.forNewhire.coachText}
                 </p>
-                <ul className="mt-3 space-y-1.5">
+                <ul className="mt-1.5 space-y-0.5">
                   {feedback.forNewhire.nextActions.map((a, i) => (
-                    <li key={i} className="text-sm text-ink-soft">
+                    <li key={i} className="text-xs text-ink-soft">
                       · {a}
                     </li>
                   ))}
                 </ul>
 
-                <details className="mt-5 rounded-xl border border-line-soft bg-line-soft/40 p-4">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden">
-                    <p className="text-xs font-semibold text-ink-soft">
-                      인사팀에 전달되는 내용 미리보기
-                    </p>
-                    <RiskTag level={feedback.forHr.riskLevel} />
+                <details className="mt-2 rounded-lg border border-line-soft bg-line-soft/40 px-2.5 py-2">
+                  <summary className="cursor-pointer list-none text-[11px] font-semibold text-ink-soft marker:content-none [&::-webkit-details-marker]:hidden">
+                    인사팀 미리보기
                   </summary>
-                  <p className="mt-2 text-sm text-ink-soft">
+                  <p className="mt-1.5 text-xs text-ink-soft">
                     {feedback.forHr.summary}
                   </p>
-                  <p className="mt-2 text-xs text-brand-dark">
+                  <p className="mt-1 text-[11px] text-brand-dark">
                     → {feedback.forHr.interventionHint}
-                  </p>
-                  <p className="mt-2 text-xs text-ink-soft">
-                    진행 {feedback.forHr.progressPct}% · 결과물{" "}
-                    {feedback.forHr.artifactCount}건 · 가이드 실천{" "}
-                    {feedback.forHr.practicedGuideCount}건
                   </p>
                 </details>
               </Card>

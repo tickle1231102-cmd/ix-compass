@@ -73,7 +73,7 @@ export default function AiBuddyPage() {
     : threads;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <Eyebrow>자유 질문</Eyebrow>
@@ -85,7 +85,7 @@ export default function AiBuddyPage() {
         <button
           type="button"
           onClick={handleNewChat}
-          className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-dark hover:underline"
+          className="inline-flex min-h-9 items-center text-sm font-semibold text-brand-dark hover:underline"
         >
           + 새 대화
         </button>
@@ -112,7 +112,7 @@ export default function AiBuddyPage() {
                     <button
                       type="button"
                       onClick={() => handleSelectThread(thread.id)}
-                      className="min-h-11 min-w-0 flex-1 text-left"
+                      className="min-h-9 min-w-0 flex-1 text-left"
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="truncate text-sm font-semibold text-ink">
@@ -130,7 +130,7 @@ export default function AiBuddyPage() {
                     <button
                       type="button"
                       onClick={() => setPendingDeleteId(thread.id)}
-                      className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-line px-3 py-1 text-[11px] font-medium text-ink-faint transition-colors hover:border-alert hover:text-alert sm:opacity-0 sm:group-hover:opacity-100"
+                      className="inline-flex min-h-9 shrink-0 items-center rounded-full border border-line px-3 py-1 text-[11px] font-medium text-ink-faint transition-colors hover:border-alert hover:text-alert sm:opacity-0 sm:group-hover:opacity-100"
                     >
                       삭제
                     </button>

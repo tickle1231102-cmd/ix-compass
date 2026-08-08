@@ -32,11 +32,11 @@ export function SectionShell({
     <div>
       {hero && <PageHero {...hero} />}
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-        <div className="mb-6 max-w-2xl">
-          <h2 className="text-xl font-bold text-ink sm:text-2xl">{title}</h2>
+      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-5">
+        <div className="mb-3 max-w-2xl">
+          <h2 className="text-lg font-bold text-ink sm:text-xl">{title}</h2>
           {description && (
-            <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
+            <p className="mt-0.5 text-xs leading-snug text-ink-soft">
               {description}
             </p>
           )}

@@ -117,7 +117,7 @@ export function BuddyChatPanel({
 
   return (
     <Card className={`flex ${minHeightClass} flex-col p-0`}>
-      <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-5">
+      <div ref={scrollRef} className="flex-1 space-y-2.5 overflow-y-auto p-3">
         {messages.length === 0 && streamingText === null && (
           <p className="py-16 text-center text-sm text-ink-faint">{emptyHint}</p>
         )}
@@ -125,7 +125,7 @@ export function BuddyChatPanel({
         {messages.map((msg) =>
           msg.role === "user" ? (
             <div key={msg.id} className="flex justify-end">
-              <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-ink px-4 py-2.5 text-sm text-white">
+              <div className="max-w-[85%] rounded-xl rounded-br-sm bg-ink px-4 py-2.5 text-sm text-white">
                 {msg.content}
               </div>
             </div>
@@ -133,7 +133,7 @@ export function BuddyChatPanel({
             <div key={msg.id} className="flex justify-start">
               <div className="max-w-[85%] space-y-1.5">
                 <Tag tone="brand">AI Buddy</Tag>
-                <div className="rounded-2xl rounded-tl-sm border border-line bg-white px-4 py-3">
+                <div className="rounded-xl rounded-tl-sm border border-line bg-white px-4 py-3">
                   <SimpleMarkdown text={msg.content} />
                 </div>
               </div>
@@ -145,7 +145,7 @@ export function BuddyChatPanel({
           <div className="flex justify-start">
             <div className="max-w-[85%] space-y-1.5">
               <Tag tone="brand">AI Buddy</Tag>
-              <div className="rounded-2xl rounded-tl-sm border border-line bg-white px-4 py-3">
+              <div className="rounded-xl rounded-tl-sm border border-line bg-white px-4 py-3">
                 <SimpleMarkdown text={streamingText} />
                 <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-brand" />
               </div>

@@ -6,7 +6,7 @@ export type NavChild = {
   hint?: string;
   hrOnly?: boolean;
   newhireOnly?: boolean;
-  /** Shown under “더보기” in section side nav to reduce primary choice count. */
+  /** Prefer non-secondary items as section default landing. */
   secondary?: boolean;
 };
 
@@ -90,13 +90,13 @@ export const TOP_NAV: TopNavItem[] = [
       {
         href: "/feedback/missions",
         label: "미션 피드백",
-        hint: "AI 코치 · 미리보기",
+        hint: "AI · 인사 주간 피드백",
         newhireOnly: true,
       },
       {
         href: "/feedback/review",
         label: "진행 리뷰",
-        hint: "AI 요약만 확인",
+        hint: "AI 검토 · 주간 전달",
         hrOnly: true,
       },
       {

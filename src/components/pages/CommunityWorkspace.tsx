@@ -203,7 +203,7 @@ function CommunityContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>Community</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">공지 · 팀 채널</h3>
@@ -244,7 +244,7 @@ function CommunityContent() {
       </div>
 
       {tab === "board" && (
-        <div className="space-y-6">
+        <div className="space-y-3">
           <Card>
             <Eyebrow>새 글 작성</Eyebrow>
             <h3 className="mt-1 text-lg font-bold text-ink">
@@ -255,7 +255,7 @@ function CommunityContent() {
                 ? "전사 공지·안내를 남겨 주세요."
                 : null}
             </p>
-            <div className="mt-4 space-y-3">
+            <div className="mt-2.5 space-y-3">
               <input
                 value={boardTitle}
                 onChange={(e) => setBoardTitle(e.target.value)}
@@ -294,7 +294,7 @@ function CommunityContent() {
       )}
 
       {tab === "team" && (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {!activeTeam ? (
             <Card>
               <p className="text-sm text-ink-soft">
@@ -337,7 +337,7 @@ function CommunityContent() {
                   )}
                 </div>
 
-                <div className="mt-4 space-y-3">
+                <div className="mt-2.5 space-y-3">
                   <input
                     value={teamTitle}
                     onChange={(e) => setTeamTitle(e.target.value)}
@@ -379,9 +379,9 @@ function CommunityContent() {
       )}
 
       {tab === "personal" && (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {isHr ? (
-            <div className="grid gap-4 lg:grid-cols-[128px_1fr]">
+            <div className="grid gap-2.5 lg:grid-cols-[128px_1fr]">
               <Card className="h-fit !p-2.5">
                 <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-faint">
                   입사자
@@ -414,7 +414,7 @@ function CommunityContent() {
                 )}
               </Card>
 
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {effectiveHrPeer ? (
                   <>
                     <Card>
@@ -426,7 +426,7 @@ function CommunityContent() {
                       <h3 className="mt-1 text-lg font-bold text-ink">
                         대화 내역
                       </h3>
-                      <div className="mt-4 space-y-3">
+                      <div className="mt-2.5 space-y-3">
                         {personalPosts.length === 0 ? (
                           <p className="text-sm text-ink-soft">
                             대화 내역이 없어요.
@@ -481,7 +481,7 @@ function CommunityContent() {
                 <p className="mt-1 text-sm text-ink-soft">
                   온보딩·복지·팀 적응 등 HR만 볼 수 있는 비공개 채널입니다.
                 </p>
-                <div className="mt-4 space-y-3">
+                <div className="mt-2.5 space-y-3">
                   <textarea
                     value={personalBody}
                     onChange={(e) => setPersonalBody(e.target.value)}
@@ -533,7 +533,7 @@ export default function CommunityPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
           <p className="text-sm text-ink-faint">불러오는 중…</p>
         </div>
       }

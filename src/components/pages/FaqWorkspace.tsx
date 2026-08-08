@@ -22,7 +22,7 @@ export default function FaqWorkspace() {
   }, [query]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>FAQ</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">FAQ · 1:1 문의</h3>
@@ -44,7 +44,7 @@ export default function FaqWorkspace() {
           <p className="text-center text-sm text-ink-soft">
             검색 결과가 없어요. AI 버디에게 직접 물어보세요.
           </p>
-          <Link href="/resources/ai-buddy" className="mt-4 flex justify-center">
+          <Link href="/resources/ai-buddy" className="mt-2.5 flex justify-center">
             <SecondaryButton>AI 버디</SecondaryButton>
           </Link>
         </Card>

@@ -10,6 +10,6 @@ export default function GuideRedirectPage() {
     router.replace("/journey/missions#guide");
   }, [router]);
   return (
-    <p className="px-4 py-10 text-sm text-ink-soft">미션 수행으로 이동 중…</p>
+    <p className="px-4 py-4 text-sm text-ink-soft">미션 수행으로 이동 중…</p>
   );
 }

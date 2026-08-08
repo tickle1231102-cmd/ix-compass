@@ -49,7 +49,7 @@ export default function OrgChartWorkspace({
 
   if (mode === "buddy") {
     return (
-      <div className="space-y-6">
+      <div className="space-y-3">
         <div>
           <Eyebrow>Mentor & Buddy</Eyebrow>
           <h3 className="mt-1 text-lg font-bold text-ink">나의 멘토 / 버디</h3>
@@ -64,7 +64,7 @@ export default function OrgChartWorkspace({
             </p>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {buddy && (
               <Card className="border-brand/40 bg-brand-softer/40">
                 <Tag tone="brand">내 버디</Tag>
@@ -108,7 +108,7 @@ export default function OrgChartWorkspace({
 
   if (mode === "people") {
     return (
-      <div className="space-y-6">
+      <div className="space-y-3">
         <div>
           <Eyebrow>People Search</Eyebrow>
           <h3 className="mt-1 text-lg font-bold text-ink">동료 프로필 검색</h3>
@@ -152,7 +152,7 @@ export default function OrgChartWorkspace({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>Org Chart</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">조직도 & 팀별 소개</h3>
@@ -162,7 +162,7 @@ export default function OrgChartWorkspace({
       </div>
 
       {(buddy || mentor) && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:grid-cols-2">
           {buddy && (
             <Card className="border-brand/40 bg-brand-softer/40">
               <Tag tone="brand">내 버디</Tag>
@@ -184,7 +184,7 @@ export default function OrgChartWorkspace({
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         {sortedTeams.map((team) => {
           const members = teams[team] ?? [];
           return (

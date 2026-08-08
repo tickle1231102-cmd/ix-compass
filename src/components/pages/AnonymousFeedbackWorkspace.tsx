@@ -125,7 +125,7 @@ export default function AnonymousFeedbackPage() {
   const canSend = buildBody(summary, strategies).length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>Anonymous Feedback</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">익명 피드백</h3>
@@ -170,9 +170,9 @@ export default function AnonymousFeedbackPage() {
             onChange={(e) => setDraft(e.target.value)}
             rows={7}
             placeholder="예: 온보딩 일정이 너무 촘촘해서 소화할 시간이 부족해요. 버디와의 1:1도 더 자주 있으면 좋겠어요."
-            className="mt-4 w-full rounded-xl border border-line px-3.5 py-3 text-sm leading-relaxed text-ink outline-none focus:border-brand"
+            className="mt-2.5 w-full rounded-xl border border-line px-3.5 py-3 text-sm leading-relaxed text-ink outline-none focus:border-brand"
           />
-          <div className="mt-4">
+          <div className="mt-2.5">
             <PrimaryButton onClick={runAnonymize} disabled={!draft.trim()}>
               AI 익명화
             </PrimaryButton>
@@ -181,7 +181,7 @@ export default function AnonymousFeedbackPage() {
       )}
 
       {step === "anonymize" && (
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <Card>
             <Eyebrow>원문 (나만 봄)</Eyebrow>
             <p className="mt-2 whitespace-pre-wrap text-sm text-ink-soft">
@@ -192,7 +192,7 @@ export default function AnonymousFeedbackPage() {
           <Card className="border-brand/30 bg-brand-softer/30">
             <Eyebrow>AI 익명화</Eyebrow>
 
-            <div className="mt-4">
+            <div className="mt-2.5">
               <p className="text-xs font-semibold text-ink-faint">핵심 요약</p>
               <ul className="mt-2 space-y-1.5">
                 {summary.map((line) => (
@@ -203,7 +203,7 @@ export default function AnonymousFeedbackPage() {
               </ul>
             </div>
 
-            <div className="mt-5">
+            <div className="mt-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-ink-faint">
                   해소 전략 제안
@@ -242,7 +242,7 @@ export default function AnonymousFeedbackPage() {
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               <SecondaryButton onClick={discardAndRewrite}>
                 전송 안 함 · 다시 작성
               </SecondaryButton>
@@ -262,7 +262,7 @@ export default function AnonymousFeedbackPage() {
           <p className="mt-2 text-sm text-ink-soft">
             인사팀은 익명으로만 확인합니다. 작성자 정보는 노출되지 않아요.
           </p>
-          <div className="mt-4">
+          <div className="mt-2.5">
             <PrimaryButton onClick={resetFlow}>새 피드백 작성</PrimaryButton>
           </div>
         </Card>
@@ -295,7 +295,7 @@ function HrAnonymousInbox() {
   const posts = useMemo(() => getAnonymousFeedbackPosts(state), [state]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>HR · Anonymous Inbox</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">익명 피드백</h3>
@@ -351,7 +351,7 @@ function HrAnonymousInbox() {
                     </span>
                   </div>
 
-                  <div className="mt-4">
+                  <div className="mt-2.5">
                     <p className="text-xs font-semibold text-ink-faint">
                       핵심 요약
                     </p>
@@ -368,7 +368,7 @@ function HrAnonymousInbox() {
                   </div>
 
                   {strategyLines.length > 0 && (
-                    <div className="mt-4">
+                    <div className="mt-2.5">
                       <p className="text-xs font-semibold text-ink-faint">
                         해소 전략 제안
                       </p>

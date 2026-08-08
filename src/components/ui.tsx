@@ -13,7 +13,7 @@ export function Card({
   return (
     <div
       id={id}
-      className={`scroll-mt-36 rounded-2xl border border-line bg-white p-5 sm:p-6 ${className}`}
+      className={`scroll-mt-36 rounded-xl border border-line bg-white p-3.5 ${className}`}
     >
       {children}
     </div>
@@ -95,7 +95,7 @@ export function ProgressBar({ value }: { value: number }) {
       aria-valuenow={clamped}
       aria-valuemin={0}
       aria-valuemax={100}
-      className="h-2.5 w-full overflow-hidden rounded-full bg-line-soft"
+      className="h-2 w-full overflow-hidden rounded-full bg-line-soft"
     >
       <div
         className="h-full rounded-full bg-brand transition-all"
@@ -115,11 +115,11 @@ export function SectionHeading({
   description?: string;
 }) {
   return (
-    <div className="mb-5 space-y-1.5">
+    <div className="mb-3 space-y-0.5">
       {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-      <h2 className="text-xl font-bold text-ink sm:text-2xl">{title}</h2>
+      <h2 className="text-lg font-bold text-ink sm:text-xl">{title}</h2>
       {description && (
-        <p className="max-w-2xl text-sm leading-relaxed text-ink-soft">
+        <p className="max-w-2xl text-xs leading-snug text-ink-soft">
           {description}
         </p>
       )}
@@ -135,9 +135,9 @@ export function StatBlock({
   label: string;
 }) {
   return (
-    <div className="rounded-2xl border border-line bg-white p-4">
-      <div className="text-2xl font-bold text-ink sm:text-3xl">{value}</div>
-      <div className="mt-1 text-xs font-medium text-ink-faint">{label}</div>
+    <div className="rounded-xl border border-line bg-white p-3">
+      <div className="text-xl font-bold text-ink sm:text-2xl">{value}</div>
+      <div className="mt-0.5 text-[11px] font-medium text-ink-faint">{label}</div>
     </div>
   );
 }
@@ -163,7 +163,7 @@ export function PrimaryButton({
       onClick={onClick}
       disabled={disabled || busy}
       aria-busy={busy || undefined}
-      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full bg-brand px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
     >
       {children}
     </button>
@@ -186,7 +186,7 @@ export function SecondaryButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-line px-4 py-2.5 text-sm font-semibold text-ink-soft transition-colors hover:border-brand hover:text-brand-dark disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-line px-3 py-2 text-sm font-semibold text-ink-soft transition-colors hover:border-brand hover:text-brand-dark disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
     >
       {children}
     </button>

@@ -18,7 +18,7 @@ export default function GlossaryPage() {
   }, [query]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>Glossary</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">용어 사전</h3>

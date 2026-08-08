@@ -23,7 +23,7 @@ const SECTIONS = [
 
 export default function IntroGuidebookPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>Welcome Guidebook</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">웰컴 가이드북</h3>

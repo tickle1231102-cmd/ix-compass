@@ -380,7 +380,7 @@ export default function ScheduleWorkspace({
                     onClick={() =>
                       setPendingDelete({ kind: "checklist", id: item.id })
                     }
-                    className="min-h-11 px-1 text-[10px] font-semibold text-alert"
+                    className="min-h-9 px-1 text-[10px] font-semibold text-alert"
                   >
                     삭제
                   </button>
@@ -442,7 +442,7 @@ export default function ScheduleWorkspace({
   );
 
   const okrBlock = showOkr ? (
-      <Card className={embedded ? undefined : "mb-6"}>
+      <Card className={embedded ? undefined : "mb-3"}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <Eyebrow>Monthly OKR</Eyebrow>
@@ -455,7 +455,7 @@ export default function ScheduleWorkspace({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        <div className="mt-2.5 grid gap-3 lg:grid-cols-2">
           {monthOkrs.length === 0 ? (
             <p className="text-sm text-ink-soft">이번 달 OKR이 아직 없어요.</p>
           ) : (
@@ -501,7 +501,7 @@ export default function ScheduleWorkspace({
                         onClick={() =>
                           setPendingDelete({ kind: "okr", id: card.id })
                         }
-                        className="min-h-11 px-1 text-xs font-semibold text-alert"
+                        className="min-h-9 px-1 text-xs font-semibold text-alert"
                       >
                         삭제
                       </button>
@@ -536,258 +536,144 @@ export default function ScheduleWorkspace({
   ) : null;
 
   const calendarColumn = (
-    <div className="space-y-6">
-          <Card>
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <Eyebrow>2026년 8월</Eyebrow>
-                <h3 className="mt-1 text-lg font-bold text-ink">온보딩 캘린더</h3>
+    <div className="space-y-2.5">
+      <div className="grid gap-2.5 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)]">
+        <Card className="!p-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <Eyebrow>2026년 8월</Eyebrow>
+              <h3 className="truncate text-sm font-bold text-ink">캘린더</h3>
+            </div>
+            <SecondaryButton
+              className="!min-h-8 shrink-0 !px-2.5 !text-xs"
+              onClick={() => openNewEvent()}
+            >
+              + 일정
+            </SecondaryButton>
+          </div>
+
+          <div className="mt-1.5 grid grid-cols-7 gap-px text-center text-[10px] font-semibold text-ink-faint">
+            {WEEKDAY_LABELS.map((label) => (
+              <div key={label} className="py-0.5">
+                {label}
               </div>
-              <SecondaryButton onClick={() => openNewEvent()}>
-                + 일정 추가
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-px">
+            {calendarCells.map((day, idx) => {
+              if (day === null) {
+                return <div key={`empty-${idx}`} className="h-7" />;
+              }
+              const iso = toDateISO(CALENDAR_YEAR, CALENDAR_MONTH, day);
+              const dayEv = eventsByDate.get(iso) ?? [];
+              const isToday = iso === DEMO_TODAY;
+              const isSelected = iso === selectedDay;
+              const inWeek = week.dates.includes(iso) && focus === "week";
+
+              return (
+                <button
+                  key={iso}
+                  type="button"
+                  onClick={() => {
+                    setSelectedDay(iso);
+                    setFocus("day");
+                  }}
+                  className={`relative flex h-7 flex-col items-center justify-center rounded-md text-[11px] font-semibold transition-colors ${
+                    isToday
+                      ? "bg-brand text-white"
+                      : isSelected && focus === "day"
+                        ? "bg-brand-soft text-brand-dark ring-1 ring-brand/40"
+                        : inWeek
+                          ? "bg-line-soft text-ink"
+                          : "text-ink hover:bg-line-soft"
+                  }`}
+                >
+                  {day}
+                  {dayEv.length > 0 && (
+                    <span
+                      className={`absolute bottom-0.5 h-1 w-1 rounded-full ${
+                        isToday ? "bg-white/90" : "bg-brand"
+                      }`}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+
+        <Card className="!p-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <Eyebrow>
+                {focus === "day" ? "일간" : "주간"}
+              </Eyebrow>
+              <h3 className="truncate text-sm font-bold text-ink">
+                {focus === "day"
+                  ? formatDisplayDate(selectedDay)
+                  : `${formatWeekLabel(week.start, week.end)} 주차`}
+              </h3>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {focus === "day" ? (
+                <SecondaryButton
+                  className="!min-h-8 !px-2.5 !text-xs"
+                  onClick={() => setFocus("week")}
+                >
+                  주간
+                </SecondaryButton>
+              ) : (
+                <SecondaryButton
+                  className="!min-h-8 !px-2.5 !text-xs"
+                  onClick={() => setFocus("day")}
+                >
+                  일간
+                </SecondaryButton>
+              )}
+              <SecondaryButton
+                className="!min-h-8 !px-2.5 !text-xs"
+                onClick={() => openNewEvent(selectedDay)}
+              >
+                + 일정
               </SecondaryButton>
             </div>
+          </div>
 
-            <div className="mt-4 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-ink-faint">
-              {WEEKDAY_LABELS.map((label) => (
-                <div key={label} className="py-1">
-                  {label}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 gap-1">
-              {calendarCells.map((day, idx) => {
-                if (day === null) {
-                  return <div key={`empty-${idx}`} className="aspect-square" />;
-                }
-                const iso = toDateISO(CALENDAR_YEAR, CALENDAR_MONTH, day);
-                const dayEv = eventsByDate.get(iso) ?? [];
-                const isToday = iso === DEMO_TODAY;
-                const isSelected = iso === selectedDay;
-                const inWeek = week.dates.includes(iso) && focus === "week";
-
-                return (
-                  <button
-                    key={iso}
-                    type="button"
-                    onClick={() => {
-                      setSelectedDay(iso);
-                      setFocus("day");
-                    }}
-                    className={`relative flex aspect-square flex-col items-center justify-center rounded-xl text-sm font-medium transition-colors ${
-                      isToday
-                        ? "bg-brand text-white ring-2 ring-brand ring-offset-1"
-                        : isSelected && focus === "day"
-                          ? "bg-brand-soft text-brand-dark ring-1 ring-brand/40"
-                          : inWeek
-                            ? "bg-line-soft text-ink"
-                            : "text-ink hover:bg-line-soft"
-                    }`}
+          <div className="mt-2">
+            {focusEvents.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-line px-2.5 py-2 text-xs text-ink-soft">
+                예정된 일정 없음
+              </p>
+            ) : (
+              <ul className="max-h-56 space-y-1 overflow-y-auto">
+                {focusEvents.map((ev) => (
+                  <li
+                    key={ev.id}
+                    className="rounded-lg border border-line-soft px-2.5 py-1.5"
                   >
-                    {day}
-                    {dayEv.length > 0 && (
-                      <span className="mt-0.5 flex gap-0.5">
-                        {dayEv.slice(0, 3).map((ev) => (
-                          <span
-                            key={ev.id}
-                            className={`h-1 w-1 rounded-full ${
-                              isToday ? "bg-white/90" : "bg-brand"
-                            }`}
-                          />
-                        ))}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </Card>
-
-          {showEventForm && (
-            <Card>
-              <Eyebrow>{eventForm.id ? "일정 수정" : "일정 추가"}</Eyebrow>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <input
-                  value={eventForm.title}
-                  onChange={(e) =>
-                    setEventForm((f) => ({ ...f, title: e.target.value }))
-                  }
-                  placeholder="제목"
-                  className="rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand sm:col-span-2"
-                />
-                <input
-                  type="date"
-                  value={eventForm.date}
-                  onChange={(e) =>
-                    setEventForm((f) => ({ ...f, date: e.target.value }))
-                  }
-                  className="rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand"
-                />
-                <input
-                  value={eventForm.time}
-                  onChange={(e) =>
-                    setEventForm((f) => ({ ...f, time: e.target.value }))
-                  }
-                  placeholder="시간 (예: 14:00)"
-                  className="rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand"
-                />
-                <select
-                  value={eventForm.type}
-                  onChange={(e) =>
-                    setEventForm((f) => ({
-                      ...f,
-                      type: e.target.value as CalendarEvent["type"],
-                    }))
-                  }
-                  className="rounded-xl border border-line px-3 py-2 text-sm"
-                >
-                  {Object.entries(EVENT_TYPE_LABEL).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  value={eventForm.description}
-                  onChange={(e) =>
-                    setEventForm((f) => ({ ...f, description: e.target.value }))
-                  }
-                  placeholder="설명 (선택)"
-                  className="rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand sm:col-span-2"
-                />
-              </div>
-              <div className="mt-3 flex gap-2">
-                <PrimaryButton
-                  onClick={saveEvent}
-                  disabled={!eventForm.title.trim()}
-                >
-                  저장
-                </PrimaryButton>
-                <SecondaryButton onClick={() => setShowEventForm(false)}>
-                  취소
-                </SecondaryButton>
-              </div>
-            </Card>
-          )}
-
-          {showCheckForm && (
-            <Card>
-              <Eyebrow>
-                {checkForm.id ? "체크리스트 수정" : "체크리스트 추가"}
-              </Eyebrow>
-              <div className="mt-3 space-y-2">
-                <select
-                  value={checkForm.stage}
-                  onChange={(e) =>
-                    setCheckForm((f) => ({
-                      ...f,
-                      stage: e.target.value as ChecklistStage,
-                    }))
-                  }
-                  className="w-full rounded-xl border border-line px-3 py-2 text-sm"
-                >
-                  {SIDEBAR_STAGES.map((s) => (
-                    <option key={s} value={s}>
-                      {CHECKLIST_STAGE_LABEL[s]}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  value={checkForm.title}
-                  onChange={(e) =>
-                    setCheckForm((f) => ({ ...f, title: e.target.value }))
-                  }
-                  placeholder="항목 제목"
-                  className="w-full rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand"
-                />
-                <input
-                  value={checkForm.description}
-                  onChange={(e) =>
-                    setCheckForm((f) => ({ ...f, description: e.target.value }))
-                  }
-                  placeholder="설명 (선택)"
-                  className="w-full rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand"
-                />
-              </div>
-              <div className="mt-3 flex gap-2">
-                <PrimaryButton
-                  onClick={saveCheck}
-                  disabled={!checkForm.title.trim()}
-                >
-                  저장
-                </PrimaryButton>
-                <SecondaryButton onClick={() => setShowCheckForm(false)}>
-                  취소
-                </SecondaryButton>
-              </div>
-            </Card>
-          )}
-
-          <Card>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <Eyebrow>
-                  {focus === "day" ? "일간 보기" : "주간 보기"}
-                </Eyebrow>
-                <h3 className="mt-1 text-lg font-bold text-ink">
-                  {focus === "day"
-                    ? formatDisplayDate(selectedDay)
-                    : `${formatWeekLabel(week.start, week.end)} 주차`}
-                </h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {focus === "day" ? (
-                  <SecondaryButton onClick={() => setFocus("week")}>
-                    이 주로 보기
-                  </SecondaryButton>
-                ) : (
-                  <SecondaryButton onClick={() => setFocus("day")}>
-                    선택일 보기
-                  </SecondaryButton>
-                )}
-                <SecondaryButton onClick={() => openNewEvent(selectedDay)}>
-                  + 일정
-                </SecondaryButton>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              {focusEvents.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-line px-3 py-4 text-sm text-ink-soft">
-                  예정된 일정이 없어요.
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {focusEvents.map((ev) => (
-                    <li
-                      key={ev.id}
-                      className="rounded-xl border border-line-soft px-3 py-2.5"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          {focus === "week" && (
-                            <p className="text-[11px] font-medium text-ink-faint">
-                              {formatDisplayDate(ev.date)}
-                            </p>
-                          )}
-                          <p className="text-sm font-semibold text-ink">
-                            {ev.title}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        {focus === "week" && (
+                          <p className="text-[10px] font-medium text-ink-faint">
+                            {formatDisplayDate(ev.date)}
                           </p>
-                          {ev.description && (
-                            <p className="mt-0.5 text-xs text-ink-faint">
-                              {ev.description}
-                            </p>
-                          )}
-                        </div>
-                        <Tag tone="neutral">{ev.time ?? "종일"}</Tag>
+                        )}
+                        <p className="truncate text-sm font-semibold text-ink">
+                          {ev.title}
+                        </p>
                       </div>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                        <Tag tone="brand">{EVENT_TYPE_LABEL[ev.type]}</Tag>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <Tag tone="neutral" className="!text-[10px]">
+                          {ev.time ?? "종일"}
+                        </Tag>
+                        <Tag tone="brand" className="!text-[10px]">
+                          {EVENT_TYPE_LABEL[ev.type]}
+                        </Tag>
                         <button
                           type="button"
                           onClick={() => openEditEvent(ev)}
-                          className="text-[11px] font-semibold text-brand-dark"
+                          className="text-[10px] font-semibold text-brand-dark"
                         >
                           수정
                         </button>
@@ -796,26 +682,148 @@ export default function ScheduleWorkspace({
                           onClick={() =>
                             setPendingDelete({ kind: "event", id: ev.id })
                           }
-                          className="min-h-11 px-1 text-[11px] font-semibold text-alert"
+                          className="text-[10px] font-semibold text-alert"
                         >
                           삭제
                         </button>
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </Card>
-        </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {showEventForm && (
+        <Card className="!p-2.5">
+          <Eyebrow>{eventForm.id ? "일정 수정" : "일정 추가"}</Eyebrow>
+          <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+            <input
+              value={eventForm.title}
+              onChange={(e) =>
+                setEventForm((f) => ({ ...f, title: e.target.value }))
+              }
+              placeholder="제목"
+              className="rounded-lg border border-line px-2.5 py-1.5 text-sm outline-none focus:border-brand sm:col-span-2"
+            />
+            <input
+              type="date"
+              value={eventForm.date}
+              onChange={(e) =>
+                setEventForm((f) => ({ ...f, date: e.target.value }))
+              }
+              className="rounded-lg border border-line px-2.5 py-1.5 text-sm outline-none focus:border-brand"
+            />
+            <input
+              value={eventForm.time}
+              onChange={(e) =>
+                setEventForm((f) => ({ ...f, time: e.target.value }))
+              }
+              placeholder="시간 (예: 14:00)"
+              className="rounded-lg border border-line px-2.5 py-1.5 text-sm outline-none focus:border-brand"
+            />
+            <select
+              value={eventForm.type}
+              onChange={(e) =>
+                setEventForm((f) => ({
+                  ...f,
+                  type: e.target.value as CalendarEvent["type"],
+                }))
+              }
+              className="rounded-lg border border-line px-2.5 py-1.5 text-sm"
+            >
+              {Object.entries(EVENT_TYPE_LABEL).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+            <input
+              value={eventForm.description}
+              onChange={(e) =>
+                setEventForm((f) => ({ ...f, description: e.target.value }))
+              }
+              placeholder="설명 (선택)"
+              className="rounded-lg border border-line px-2.5 py-1.5 text-sm outline-none focus:border-brand sm:col-span-2"
+            />
+          </div>
+          <div className="mt-2 flex gap-2">
+            <PrimaryButton
+              onClick={saveEvent}
+              disabled={!eventForm.title.trim()}
+            >
+              저장
+            </PrimaryButton>
+            <SecondaryButton onClick={() => setShowEventForm(false)}>
+              취소
+            </SecondaryButton>
+          </div>
+        </Card>
+      )}
+
+      {showCheckForm && (
+        <Card className="!p-2.5">
+          <Eyebrow>
+            {checkForm.id ? "체크리스트 수정" : "체크리스트 추가"}
+          </Eyebrow>
+          <div className="mt-2 space-y-1.5">
+            <select
+              value={checkForm.stage}
+              onChange={(e) =>
+                setCheckForm((f) => ({
+                  ...f,
+                  stage: e.target.value as ChecklistStage,
+                }))
+              }
+              className="w-full rounded-lg border border-line px-2.5 py-1.5 text-sm"
+            >
+              {SIDEBAR_STAGES.map((s) => (
+                <option key={s} value={s}>
+                  {CHECKLIST_STAGE_LABEL[s]}
+                </option>
+              ))}
+            </select>
+            <input
+              value={checkForm.title}
+              onChange={(e) =>
+                setCheckForm((f) => ({ ...f, title: e.target.value }))
+              }
+              placeholder="항목 제목"
+              className="w-full rounded-lg border border-line px-2.5 py-1.5 text-sm outline-none focus:border-brand"
+            />
+            <input
+              value={checkForm.description}
+              onChange={(e) =>
+                setCheckForm((f) => ({ ...f, description: e.target.value }))
+              }
+              placeholder="설명 (선택)"
+              className="w-full rounded-lg border border-line px-2.5 py-1.5 text-sm outline-none focus:border-brand"
+            />
+          </div>
+          <div className="mt-2 flex gap-2">
+            <PrimaryButton
+              onClick={saveCheck}
+              disabled={!checkForm.title.trim()}
+            >
+              저장
+            </PrimaryButton>
+            <SecondaryButton onClick={() => setShowCheckForm(false)}>
+              취소
+            </SecondaryButton>
+          </div>
+        </Card>
+      )}
+    </div>
   );
 
   return (
     <div
       className={
         embedded
-          ? "space-y-6"
-          : "mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14"
+          ? "space-y-3"
+          : "mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-5"
       }
     >
       {!embedded && (
@@ -830,7 +838,7 @@ export default function ScheduleWorkspace({
         <PageShell sidebar={checklistGrid}>{calendarColumn}</PageShell>
       )}
       {showTimeline && !showChecklist && (
-        <div className="space-y-4">{calendarColumn}</div>
+        <div className="space-y-2.5">{calendarColumn}</div>
       )}
       {!showTimeline && showChecklist && checklistGrid}
       <ConfirmDialog
@@ -922,7 +930,7 @@ function HrOkrAddPanel({
   const showing = open || editingId !== null;
 
   return (
-    <div className="mt-4">
+    <div className="mt-2.5">
       {!showing ? (
         <SecondaryButton
           onClick={() => {

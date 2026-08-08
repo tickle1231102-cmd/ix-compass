@@ -23,7 +23,7 @@ const PRINCIPLES = [
 
 export default function IntroCulturePage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>Culture</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">조직문화</h3>
@@ -32,7 +32,7 @@ export default function IntroCulturePage() {
           정리했습니다.
         </p>
       </div>
-      <div className="grid gap-4">
+      <div className="grid gap-2.5">
         {PRINCIPLES.map((p) => (
           <Card key={p.title}>
             <h4 className="font-bold text-ink">{p.title}</h4>

@@ -659,7 +659,7 @@ export const SEED_MISSION_ASSIGNMENTS: MissionAssignment[] = [
     description: MISSION_TEMPLATES[2].description,
     dnaFocus: [...MISSION_TEMPLATES[2].dnaFocus],
     dueAt: "2026-08-08T18:00:00.000Z",
-    status: "in_progress",
+    status: "awaiting_review",
     assignedAt: "2026-08-01T09:00:00.000Z",
     assignedBy: "hr",
     priority: "normal",
@@ -748,6 +748,61 @@ export const SEED_MISSION_CHECKINS: MissionCheckIn[] = [
 ];
 
 export const SEED_MISSION_FEEDBACKS: MissionFeedback[] = [
+  {
+    id: "fb-me-w2",
+    assignmentId: "asg-me-w2-done",
+    employeeId: DEMO_EMPLOYEE_ID,
+    week: 2,
+    missionTitle: "현장 페인포인트 리서치 요약",
+    forNewhire: {
+      coachText:
+        "인터뷰·관찰 메모를 구조화해 제출한 점이 좋아요. 다음 주 기능정의에 그대로 이어질 가설을 한 줄로 남겨 두면 흐름이 더 탄탄해집니다.",
+      nextActions: [
+        "가설 1개를 기능정의서 상단에 옮기기",
+        "이해관계자 1명에게 요약본 공유",
+      ],
+    },
+    forHr: {
+      summary:
+        "2주차 리서치 미션 완료. 결과물·실천 모두 확인되며 3주차 기능정의로 자연스럽게 이어질 상태.",
+      progressPct: 100,
+      riskLevel: "stable",
+      interventionHint: "현 페이스 유지. 주간 피드백으로 격려만 전달하면 됩니다.",
+      artifactCount: 1,
+      practicedGuideCount: 3,
+    },
+    generatedAt: "2026-07-31T16:00:00.000Z",
+    hrReviewed: true,
+    hrWeeklyFeedback:
+      "2주차 리서치 정리 잘했어요. 인터뷰에서 나온 ‘반복 FAQ’ 가설을 3주차 기능정의의 첫 문제로 가져가 주세요. 막히면 버디에게 먼저 공유해도 좋습니다.",
+    hrDeliveredAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "fb-me-w3",
+    assignmentId: "asg-me-w3",
+    employeeId: DEMO_EMPLOYEE_ID,
+    week: 3,
+    missionTitle: MISSION_TEMPLATES[2].title,
+    forNewhire: {
+      coachText:
+        "기능정의·와이어프레임 초안을 올린 점이 분명한 진전이에요. 비범위를 더 짧게 적으면 1차 범위가 한눈에 들어옵니다.",
+      nextActions: [
+        "비범위 문장을 3줄 이내로 다듬기",
+        "와이어프레임 CTA를 한 화면으로 고정",
+      ],
+    },
+    forHr: {
+      summary:
+        "3주차 미션 진행 약 70%. 결과물 제출·범위 정의가 보이나 비범위 정리가 더 필요.",
+      progressPct: 70,
+      riskLevel: "watch",
+      interventionHint: "주간 피드백에서 범위 축소를 한 줄로 가이드해 주세요.",
+      artifactCount: 1,
+      practicedGuideCount: 1,
+    },
+    generatedAt: "2026-08-04T11:10:00.000Z",
+    hrReviewed: false,
+  },
   {
     id: "fb-emp02-w2",
     assignmentId: "asg-emp02-w2",

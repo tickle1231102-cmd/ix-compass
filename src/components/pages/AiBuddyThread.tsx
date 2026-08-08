@@ -19,7 +19,7 @@ export default function AiBuddyThreadPage() {
         <p className="text-sm text-ink-soft">
           {!thread ? "대화를 찾을 수 없어요." : "이 대화에 접근할 수 없어요."}
         </p>
-        <Link href="/resources/ai-buddy" className="mt-4 inline-block">
+        <Link href="/resources/ai-buddy" className="mt-2.5 inline-block">
           <SecondaryButton>자유 질문으로</SecondaryButton>
         </Link>
       </Card>
@@ -27,7 +27,7 @@ export default function AiBuddyThreadPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="min-w-0">
         <Link
           href="/resources/ai-buddy"

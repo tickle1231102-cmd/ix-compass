@@ -5,7 +5,7 @@ import { DNA_VALUES } from "@/lib/seed";
 
 export default function IntroVisionPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>Vision & DNA</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">비전 & 핵심가치</h3>

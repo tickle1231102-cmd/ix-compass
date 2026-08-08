@@ -281,6 +281,10 @@ export interface MissionFeedback {
   hrReviewed: boolean;
   /** Internal HR note — not visible to newhire. */
   hrInternalNote?: string;
+  /** Weekly coaching note from HR — visible to newhire on 미션 피드백. */
+  hrWeeklyFeedback?: string;
+  /** When HR delivered the weekly note to the newhire. */
+  hrDeliveredAt?: string;
 }
 
 /** Row returned to HR Mission Progress Copilot (forHr only). */

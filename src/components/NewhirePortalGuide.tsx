@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PrimaryButton, SecondaryButton, Tag } from "@/components/ui";
 
-const GUIDE_STORAGE_KEY = "ix-compass-newhire-guide-v4";
+const GUIDE_STORAGE_KEY = "ix-compass-newhire-guide-v5";
 
-/** Task-first 2 steps. Optional full tour is separate. */
+/** Default portal walkthrough for new hires. */
 export const GUIDE_STEPS = [
   {
     tab: "대시보드",
@@ -18,26 +18,9 @@ export const GUIDE_STEPS = [
   {
     tab: "미션 수행",
     title: "미션 → 실천 → 제출",
-    body: "한 페이지에서 미션을 확인하고, AI 실천 체크를 한 뒤 결과물을 제출하면 AI 피드백이 생성됩니다.",
-    href: "/journey/missions#guide",
-    spotlight: "좌측 ‘미션 수행’에서 실천 체크와 결과물 제출을 이어서 해보세요.",
-  },
-] as const;
-
-const FULL_TOUR_STEPS = [
-  {
-    tab: "대시보드",
-    title: "오늘의 다음 할 일",
-    body: "대시보드에서 ‘다음 할 일’ 카드 하나만 먼저 확인하세요. 미션이 보이면 이어하기를 누르면 됩니다.",
-    href: "/",
-    spotlight: "상단 ‘대시보드’와 강조된 미션 카드를 살펴보세요.",
-  },
-  {
-    tab: "미션 수행",
-    title: "미션 → 실천 → 제출",
-    body: "한 페이지에서 미션을 확인하고, AI 실천 체크를 한 뒤 결과물을 제출하면 AI 피드백이 생성됩니다.",
-    href: "/journey/missions#guide",
-    spotlight: "좌측 ‘미션 수행’에서 실천 체크와 결과물 제출을 이어서 해보세요.",
+    body: "위에서부터 미션을 확인하고, 실천 체크를 한 뒤 결과물을 제출하면 피드백이 생성됩니다.",
+    href: "/journey/missions#mission",
+    spotlight: "미션 수행 페이지 맨 위부터 순서대로 눌러 보세요.",
   },
   {
     tab: "소개",
@@ -62,9 +45,7 @@ const FULL_TOUR_STEPS = [
   },
 ] as const;
 
-export type GuideStepHref =
-  | (typeof GUIDE_STEPS)[number]["href"]
-  | (typeof FULL_TOUR_STEPS)[number]["href"];
+export type GuideStepHref = (typeof GUIDE_STEPS)[number]["href"];
 
 export function hasSeenNewhireGuide(employeeId: string): boolean {
   if (typeof window === "undefined") return true;
@@ -100,10 +81,8 @@ export function NewhirePortalGuide({
   onStepHrefChange?: (href: GuideStepHref | null) => void;
 }) {
   const router = useRouter();
-  const [fullTour, setFullTour] = useState(false);
-  const steps = fullTour ? FULL_TOUR_STEPS : GUIDE_STEPS;
   const [step, setStep] = useState(0);
-  const current = steps[step];
+  const current = GUIDE_STEPS[step];
   const started = useRef(false);
 
   useEffect(() => {
@@ -119,9 +98,9 @@ export function NewhirePortalGuide({
   }, [current.href, onStepHrefChange]);
 
   function go(next: number) {
-    const clamped = Math.max(0, Math.min(steps.length - 1, next));
+    const clamped = Math.max(0, Math.min(GUIDE_STEPS.length - 1, next));
     setStep(clamped);
-    router.push(steps[clamped].href);
+    router.push(GUIDE_STEPS[clamped].href);
   }
 
   function finish() {
@@ -129,12 +108,6 @@ export function NewhirePortalGuide({
     onStepHrefChange?.(null);
     onComplete();
     router.push("/");
-  }
-
-  function startFullTour() {
-    setFullTour(true);
-    setStep(0);
-    router.push(FULL_TOUR_STEPS[0].href);
   }
 
   return (
@@ -149,10 +122,9 @@ export function NewhirePortalGuide({
         <div className="min-w-0 flex-1" aria-live="polite">
           <div className="flex flex-wrap items-center gap-2">
             <Tag tone="brand">
-              {step + 1}/{steps.length}
+              {step + 1}/{GUIDE_STEPS.length}
             </Tag>
             <Tag tone="neutral">{current.tab}</Tag>
-            {!fullTour && <Tag tone="neutral">핵심 2단계</Tag>}
           </div>
           <h3
             id="portal-guide-title"
@@ -169,15 +141,10 @@ export function NewhirePortalGuide({
           {step > 0 && (
             <SecondaryButton onClick={() => go(step - 1)}>이전</SecondaryButton>
           )}
-          {step < steps.length - 1 ? (
+          {step < GUIDE_STEPS.length - 1 ? (
             <PrimaryButton onClick={() => go(step + 1)}>다음</PrimaryButton>
           ) : (
             <PrimaryButton onClick={finish}>시작하기</PrimaryButton>
-          )}
-          {!fullTour && step === steps.length - 1 && (
-            <SecondaryButton onClick={startFullTour}>
-              전체 둘러보기
-            </SecondaryButton>
           )}
           <SecondaryButton onClick={finish}>건너뛰기</SecondaryButton>
         </div>

@@ -39,7 +39,7 @@ export default function OkrDraftAgentPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>OKR Draft Agent</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">OKR 초안 에이전트</h3>
@@ -97,7 +97,7 @@ export default function OkrDraftAgentPage() {
             선택한 입사자의 초안이 없어요. 초안 생성을 눌러 주세요.
           </p>
         ) : (
-          <div className="mt-4 space-y-4">
+          <div className="mt-2.5 space-y-2.5">
             {draft.objectives.map((obj, i) => (
               <div
                 key={i}

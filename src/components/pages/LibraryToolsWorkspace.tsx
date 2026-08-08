@@ -30,9 +30,9 @@ export default function LibraryPage() {
   }, [docs]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -57,7 +57,7 @@ export default function LibraryPage() {
           </p>
         </Card>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {LIBRARY_CATEGORIES.map((category) => {
             const items = grouped.get(category) ?? [];
             if (items.length === 0) return null;
@@ -97,7 +97,7 @@ export default function LibraryPage() {
         </div>
       )}
 
-      <p className="mt-8 text-center text-xs text-ink-faint">
+      <p className="mt-3 text-center text-xs text-ink-faint">
         {docs.length}개 문서 · AI 버디 대화에서도 관련 자료를 추천해드려요.
       </p>
     </div>

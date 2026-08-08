@@ -84,7 +84,7 @@ export default function HrMissionManagePage() {
     .slice(0, 8);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <Eyebrow>Mission Assign</Eyebrow>
         <h3 className="mt-1 text-lg font-bold text-ink">미션 배정</h3>
@@ -95,7 +95,7 @@ export default function HrMissionManagePage() {
       </div>
 
       <Card>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="text-xs font-medium text-ink-faint">대상 입사자</span>
             <select
@@ -127,7 +127,7 @@ export default function HrMissionManagePage() {
           </label>
         </div>
 
-        <label className="mt-4 block text-sm">
+        <label className="mt-2.5 block text-sm">
           <span className="text-xs font-medium text-ink-faint">미션 제목</span>
           <input
             value={title}
@@ -154,7 +154,7 @@ export default function HrMissionManagePage() {
           ))}
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="text-xs font-medium text-ink-faint">마감일</span>
             <input
@@ -179,7 +179,7 @@ export default function HrMissionManagePage() {
           </label>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <PrimaryButton onClick={handleAssign}>미션 배정</PrimaryButton>
           <SecondaryButton onClick={() => router.push("/feedback/review")}>
             진행 리뷰 보기
