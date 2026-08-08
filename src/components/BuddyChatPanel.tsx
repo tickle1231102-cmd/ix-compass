@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { SimpleMarkdown } from "@/components/SimpleMarkdown";
 import { Card, PrimaryButton, Tag } from "@/components/ui";
-import { answerBuddyQuestion, chunkForStream } from "@/lib/ai";
+import { chunkForStream } from "@/lib/ai";
+import { askBuddy } from "@/lib/buddy-api";
 import { getBuddyThread, getChecklistStats } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
 
@@ -73,7 +74,7 @@ export function BuddyChatPanel({
     );
   }
 
-  function send() {
+  async function send() {
     const text = input.trim();
     if (!text || isStreaming) return;
 
@@ -86,18 +87,17 @@ export function BuddyChatPanel({
 
     appendBuddyUserMessage(id, text);
     setInput("");
+    setIsStreaming(true);
+    setStreamingText("");
 
     const stats = getChecklistStats(state, currentEmployeeId);
     const checklistSummary = `${stats.checked}/${stats.total} (${stats.percent}%)`;
-    const full = answerBuddyQuestion(text, {
+    const { reply: full } = await askBuddy(text, {
       checklistSummary,
       employeeName: session?.name,
     });
 
     const chunks = chunkForStream(full);
-    setIsStreaming(true);
-    setStreamingText("");
-
     let accumulated = "";
     chunks.forEach((chunk, index) => {
       const timer = setTimeout(() => {

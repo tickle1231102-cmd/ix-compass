@@ -5,7 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { SimpleMarkdown } from "@/components/SimpleMarkdown";
 import { PrimaryButton, Tag } from "@/components/ui";
-import { answerBuddyQuestion, chunkForStream } from "@/lib/ai";
+import { chunkForStream } from "@/lib/ai";
+import { askBuddy } from "@/lib/buddy-api";
 import { getBuddyThread, getBuddyThreads, getChecklistStats } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
 
@@ -125,25 +126,24 @@ export function FloatingAiBuddy({ hidden = false }: { hidden?: boolean }) {
     setIsStreaming(false);
   }
 
-  function send() {
+  async function send() {
     const text = input.trim();
     if (!text || isStreaming) return;
 
     const id = ensureThread();
     appendBuddyUserMessage(id, text);
     setInput("");
+    setIsStreaming(true);
+    setStreamingText("");
 
     const stats = getChecklistStats(state, currentEmployeeId);
     const checklistSummary = `${stats.checked}/${stats.total} (${stats.percent}%)`;
-    const full = answerBuddyQuestion(text, {
+    const { reply: full } = await askBuddy(text, {
       checklistSummary,
       employeeName: session?.name,
     });
 
     const chunks = chunkForStream(full);
-    setIsStreaming(true);
-    setStreamingText("");
-
     let accumulated = "";
     chunks.forEach((chunk, index) => {
       const timer = setTimeout(() => {
