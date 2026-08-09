@@ -67,6 +67,7 @@ export default function NewhireMissionsPage() {
   const [focusStep, setFocusStep] = useState<(typeof STEPS)[number]["id"]>(
     "mission"
   );
+  const [recommending, setRecommending] = useState(false);
   const autoRanFor = useRef<string | null>(null);
   const prevGuideDone = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -147,7 +148,10 @@ export default function NewhireMissionsPage() {
     const text = `${active.title} — ${active.description}`.trim();
     if (!text) return;
     autoRanFor.current = active.id;
-    void runContextChecklist(active.week, text, active.id);
+    setRecommending(true);
+    void runContextChecklist(active.week, text, active.id).finally(() =>
+      setRecommending(false)
+    );
   }, [active?.id, latestChecklist?.id, me, runContextChecklist, active]);
 
   // Hash deep-link (#guide | #submit | #mission | #feedback)
@@ -255,13 +259,18 @@ export default function NewhireMissionsPage() {
 
   async function handleRunChecklist(assignmentId?: string, week?: number) {
     const text = taskInput.trim();
-    if (!text) return;
-    await runContextChecklist(
-      week ?? active?.week ?? (me!.weekNumber || 1),
-      text,
-      assignmentId ?? active?.id
-    );
-    setEditTaskOpen(false);
+    if (!text || recommending) return;
+    setRecommending(true);
+    try {
+      await runContextChecklist(
+        week ?? active?.week ?? (me!.weekNumber || 1),
+        text,
+        assignmentId ?? active?.id
+      );
+      setEditTaskOpen(false);
+    } finally {
+      setRecommending(false);
+    }
   }
 
   async function handleSubmitForFeedback() {
@@ -393,9 +402,9 @@ export default function NewhireMissionsPage() {
                 <div className="flex justify-end">
                   <PrimaryButton
                     onClick={() => handleRunChecklist()}
-                    disabled={!taskInput.trim()}
+                    disabled={!taskInput.trim() || recommending}
                   >
-                    추천
+                    {recommending ? "추천 중…" : "추천"}
                   </PrimaryButton>
                 </div>
               </div>
@@ -469,9 +478,13 @@ export default function NewhireMissionsPage() {
                 <div className="flex justify-end">
                   <PrimaryButton
                     onClick={() => handleRunChecklist(active.id)}
-                    disabled={!taskInput.trim()}
+                    disabled={!taskInput.trim() || recommending}
                   >
-                    {latestChecklist ? "다시 추천" : "추천"}
+                    {recommending
+                      ? "추천 중…"
+                      : latestChecklist
+                        ? "다시 추천"
+                        : "추천"}
                   </PrimaryButton>
                 </div>
               </div>
@@ -481,21 +494,33 @@ export default function NewhireMissionsPage() {
               <div className="mt-2">
                 <PrimaryButton
                   onClick={() => handleRunChecklist(active.id)}
-                  disabled={!taskInput.trim()}
+                  disabled={!taskInput.trim() || recommending}
                 >
-                  추천
+                  {recommending ? "추천 중…" : "추천"}
                 </PrimaryButton>
               </div>
+            )}
+
+            {recommending && !latestChecklist && (
+              <p className="mt-2 text-xs text-ink-soft">
+                AI가 이번 미션에 맞는 실천 가이드를 고르는 중이에요…
+              </p>
             )}
 
             {latestChecklist && (
               <>
                 {latestChecklist.rationale && (
-                  <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-ink-soft">
+                  <p
+                    className={`mt-2 whitespace-pre-wrap text-xs leading-relaxed text-ink-soft ${
+                      recommending ? "opacity-50" : ""
+                    }`}
+                  >
                     {latestChecklist.rationale}
                   </p>
                 )}
-                <ul className="mt-2 space-y-1">
+                <ul
+                  className={`mt-2 space-y-1 ${recommending ? "opacity-50" : ""}`}
+                >
                   {latestChecklist.guides.map((guide) => {
                     const done = latestChecklist.practicedGuideIds.includes(
                       guide.id

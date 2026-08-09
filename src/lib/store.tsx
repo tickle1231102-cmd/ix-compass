@@ -1233,18 +1233,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const checklistId = `checklist-${
         state.session?.employeeId ?? "anon"
       }-${Date.now()}`;
-      // Instant rule-engine guides, then upgrade with Gemini when ready.
+      // Wait for the final result (Gemini or API fallback) before committing
+      // once — avoids flashing rule-engine tips then swapping them seconds later.
+      const result = await askChecklist(taskText, fallbackDna);
       dispatch({
         type: "RUN_CONTEXT_CHECKLIST",
         week,
         taskText,
         assignmentId,
-        checklistId,
-        result: analyzeTaskContext(taskText, fallbackDna),
-      });
-      const result = await askChecklist(taskText, fallbackDna);
-      dispatch({
-        type: "UPGRADE_CONTEXT_CHECKLIST",
         checklistId,
         result,
       });
