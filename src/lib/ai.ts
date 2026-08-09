@@ -264,19 +264,19 @@ export function analyzeTaskContext(
 
   let rationale: string;
   if (weekFallbackDna.length > 0) {
-    rationale = `미션과 핵심가치의 실천 맥락 적합성을 기준으로${
+    rationale = `이번 주 미션에 바로 실행할 수 있도록, 미션–가치 적합성을 기준으로${
       uniqueKeywords.length > 0
         ? ` "${uniqueKeywords.join(", ")}" 신호를 반영해`
         : ""
-    } ${guideLabels} 가이드 3가지를 골랐어요${
+    } ${guideLabels} 실천 가이드 3가지를 골랐어요${
       missionLabels ? ` (미션 초점 후보: ${missionLabels})` : ""
     }.`;
   } else if (uniqueKeywords.length > 0) {
     rationale = `업무와 가치의 연결 신호("${uniqueKeywords.join(
       ", "
-    )}")가 강해 ${guideLabels} 실천 가이드 3가지를 제안해요.`;
+    )}")를 반영해, 한 주 안에 끝낼 수 있는 ${guideLabels} 실천 가이드 3가지를 제안해요.`;
   } else {
-    rationale = `뚜렷한 미션–가치 신호가 약해 ${guideLabels} 기준으로 실천 가이드 3가지를 제안해요.`;
+    rationale = `뚜렷한 미션–가치 신호가 약해 ${guideLabels} 기준으로, 한 주 안에 실행 가능한 실천 가이드 3가지를 제안해요.`;
   }
 
   return { relevantDnaIds, matchedKeywords: uniqueKeywords, rationale, guides };
