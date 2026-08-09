@@ -1,8 +1,10 @@
 import {
   analyzeTaskContext,
+  anonymizeFeedback,
   computeRiskNote,
   draftOKRFromEvidence,
   generateMissionFeedback,
+  type AnonymizedFeedback,
   type MissionRiskSignals,
 } from "@/lib/ai";
 import type {
@@ -124,6 +126,15 @@ export async function askOkrDraft(payload: {
         payload.employeeId,
         payload.month
       )
+  );
+  return data;
+}
+
+export async function askAnonymize(text: string): Promise<AnonymizedFeedback> {
+  const { data } = await postJson<AnonymizedFeedback>(
+    "/api/ai/anonymize",
+    { text },
+    () => anonymizeFeedback(text)
   );
   return data;
 }

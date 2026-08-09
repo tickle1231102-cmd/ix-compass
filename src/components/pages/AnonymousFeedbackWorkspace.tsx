@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { anonymizeFeedback } from "@/lib/ai";
+import { askAnonymize } from "@/lib/ai-api";
 import { useStore } from "@/lib/store";
 import {
   getAnonymousFeedbackPosts,
@@ -50,6 +50,7 @@ export default function AnonymousFeedbackPage() {
   const [draft, setDraft] = useState("");
   const [summary, setSummary] = useState<string[]>([]);
   const [strategies, setStrategies] = useState<string[]>([]);
+  const [anonymizing, setAnonymizing] = useState(false);
 
   const sentFeedbacks = useMemo(() => {
     if (!currentEmployeeId) return [];
@@ -61,15 +62,20 @@ export default function AnonymousFeedbackPage() {
     );
   }, [state, currentEmployeeId]);
 
-  function runAnonymize() {
+  async function runAnonymize() {
     const text = draft.trim();
-    if (!text) return;
-    const result = anonymizeFeedback(text);
-    setSummary(result.summary);
-    setStrategies(
-      result.strategies.length > 0 ? [...result.strategies] : [""]
-    );
-    setStep("anonymize");
+    if (!text || anonymizing) return;
+    setAnonymizing(true);
+    try {
+      const result = await askAnonymize(text);
+      setSummary(result.summary);
+      setStrategies(
+        result.strategies.length > 0 ? [...result.strategies] : [""]
+      );
+      setStep("anonymize");
+    } finally {
+      setAnonymizing(false);
+    }
   }
 
   function updateStrategy(index: number, value: string) {
@@ -173,8 +179,11 @@ export default function AnonymousFeedbackPage() {
             className="mt-2.5 w-full rounded-xl border border-line px-3.5 py-3 text-sm leading-relaxed text-ink outline-none focus:border-brand"
           />
           <div className="mt-2.5">
-            <PrimaryButton onClick={runAnonymize} disabled={!draft.trim()}>
-              AI 익명화
+            <PrimaryButton
+              onClick={() => void runAnonymize()}
+              disabled={!draft.trim() || anonymizing}
+            >
+              {anonymizing ? "익명화 중…" : "AI 익명화"}
             </PrimaryButton>
           </div>
         </Card>
