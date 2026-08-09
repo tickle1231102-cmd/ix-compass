@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { BuddyShortcuts } from "@/components/BuddyShortcuts";
 import { SimpleMarkdown } from "@/components/SimpleMarkdown";
 import { PrimaryButton, Tag } from "@/components/ui";
 import { chunkForStream } from "@/lib/ai";
 import { askBuddy } from "@/lib/buddy-api";
+import { parseBuddyContent } from "@/lib/buddy-links";
 import { getBuddyThread, getBuddyThreads, getChecklistStats } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
 
@@ -142,8 +144,9 @@ export function FloatingAiBuddy({ hidden = false }: { hidden?: boolean }) {
       checklistSummary,
       employeeName: session?.name,
     });
+    const { text: visibleReply } = parseBuddyContent(full);
 
-    const chunks = chunkForStream(full);
+    const chunks = chunkForStream(visibleReply);
     let accumulated = "";
     chunks.forEach((chunk, index) => {
       const timer = setTimeout(() => {
@@ -237,7 +240,19 @@ export function FloatingAiBuddy({ hidden = false }: { hidden?: boolean }) {
                   <div className="max-w-[88%] space-y-1">
                     <Tag tone="brand">AI Buddy</Tag>
                     <div className="rounded-2xl rounded-tl-sm border border-line bg-white px-3 py-2 text-xs">
-                      <SimpleMarkdown text={msg.content} />
+                      {(() => {
+                        const parsed = parseBuddyContent(msg.content);
+                        return (
+                          <>
+                            <SimpleMarkdown text={parsed.text} />
+                            <BuddyShortcuts
+                              links={parsed.links}
+                              dense
+                              onNavigate={() => setOpen(false)}
+                            />
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

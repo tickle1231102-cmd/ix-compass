@@ -538,6 +538,8 @@ export function answerBuddyQuestion(
       doc.summary,
       "",
       `자세한 내용은 자료실에서 확인할 수 있어요. 키워드: ${doc.keywords.join(", ")}.`,
+      "",
+      "아래 바로가기로 해당 메뉴로 이동해 보세요.",
     ].join("\n");
   }
 

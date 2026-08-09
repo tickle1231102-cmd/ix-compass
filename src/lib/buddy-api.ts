@@ -1,4 +1,8 @@
 import { answerBuddyQuestion } from "@/lib/ai";
+import {
+  formatBuddyReplyWithLinks,
+  suggestBuddyLinks,
+} from "@/lib/buddy-links";
 
 export type BuddyAskContext = {
   checklistSummary?: string;
@@ -53,7 +57,10 @@ export async function askBuddy(
     throw new Error("empty buddy reply");
   } catch {
     return {
-      reply: answerBuddyQuestion(trimmed, context),
+      reply: formatBuddyReplyWithLinks(
+        answerBuddyQuestion(trimmed, context),
+        suggestBuddyLinks(trimmed)
+      ),
       source: "fallback",
     };
   }

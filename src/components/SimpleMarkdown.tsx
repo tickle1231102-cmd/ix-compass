@@ -1,6 +1,8 @@
 "use client";
 
-/** Lightweight markdown for AI Buddy — bold, lists, inline code, newlines. */
+import Link from "next/link";
+
+/** Lightweight markdown for AI Buddy — bold, lists, inline code, links, newlines. */
 export function SimpleMarkdown({ text }: { text: string }) {
   const lines = text.split("\n");
   return (
@@ -25,7 +27,7 @@ export function SimpleMarkdown({ text }: { text: string }) {
 
 function renderInline(text: string): React.ReactNode[] {
   const parts: React.ReactNode[] = [];
-  const re = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  const re = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let key = 0;
@@ -40,7 +42,7 @@ function renderInline(text: string): React.ReactNode[] {
           {token.slice(2, -2)}
         </strong>
       );
-    } else {
+    } else if (token.startsWith("`")) {
       parts.push(
         <code
           key={key++}
@@ -49,6 +51,35 @@ function renderInline(text: string): React.ReactNode[] {
           {token.slice(1, -1)}
         </code>
       );
+    } else {
+      const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+      const label = linkMatch?.[1] ?? token;
+      const href = linkMatch?.[2] ?? "#";
+      if (href.startsWith("/")) {
+        parts.push(
+          <Link
+            key={key++}
+            href={href}
+            className="font-semibold text-brand-dark underline decoration-brand/40 underline-offset-2 hover:decoration-brand"
+          >
+            {label}
+          </Link>
+        );
+      } else if (/^https?:\/\//i.test(href)) {
+        parts.push(
+          <a
+            key={key++}
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-brand-dark underline decoration-brand/40 underline-offset-2 hover:decoration-brand"
+          >
+            {label}
+          </a>
+        );
+      } else {
+        parts.push(label);
+      }
     }
     last = m.index + token.length;
   }

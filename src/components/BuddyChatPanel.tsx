@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { BuddyShortcuts } from "@/components/BuddyShortcuts";
 import { SimpleMarkdown } from "@/components/SimpleMarkdown";
 import { Card, PrimaryButton, Tag } from "@/components/ui";
 import { chunkForStream } from "@/lib/ai";
 import { askBuddy } from "@/lib/buddy-api";
+import { parseBuddyContent } from "@/lib/buddy-links";
 import { getBuddyThread, getChecklistStats } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
 
@@ -96,8 +98,9 @@ export function BuddyChatPanel({
       checklistSummary,
       employeeName: session?.name,
     });
+    const { text: visibleReply } = parseBuddyContent(full);
 
-    const chunks = chunkForStream(full);
+    const chunks = chunkForStream(visibleReply);
     let accumulated = "";
     chunks.forEach((chunk, index) => {
       const timer = setTimeout(() => {
@@ -134,7 +137,15 @@ export function BuddyChatPanel({
               <div className="max-w-[85%] space-y-1.5">
                 <Tag tone="brand">AI Buddy</Tag>
                 <div className="rounded-xl rounded-tl-sm border border-line bg-white px-4 py-3">
-                  <SimpleMarkdown text={msg.content} />
+                  {(() => {
+                    const parsed = parseBuddyContent(msg.content);
+                    return (
+                      <>
+                        <SimpleMarkdown text={parsed.text} />
+                        <BuddyShortcuts links={parsed.links} />
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
