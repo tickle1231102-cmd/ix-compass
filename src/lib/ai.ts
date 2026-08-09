@@ -191,8 +191,9 @@ const DEFAULT_DNA_FALLBACK: DNAId[] = [
 ];
 
 /**
- * Context Checklist Agent — ranks the 12 core values for today's task,
- * keeps the top 3, and returns exactly 3 checklist tips (one per value).
+ * Context Checklist Agent (rule fallback) — ranks mission↔DNA practice fit.
+ * Picks 3 tips by suitability; the same DNA may appear more than once when
+ * it is the strongest fit for the mission (library tips rotate).
  */
 export function analyzeTaskContext(
   taskText: string,
@@ -205,7 +206,7 @@ export function analyzeTaskContext(
 } {
   const normalized = taskText.toLowerCase();
   const matchedKeywords: string[] = [];
-  const scored: { dnaId: DNAId; score: number }[] = [];
+  const scoreByDna = new Map<DNAId, number>();
 
   for (const [dnaId, keywords] of Object.entries(DNA_KEYWORDS) as [
     DNAId,
@@ -213,63 +214,70 @@ export function analyzeTaskContext(
   ][]) {
     const hits = keywords.filter((k) => normalized.includes(k.toLowerCase()));
     let score = hits.length;
-    // Mission focus DNA get a small boost when relevant to the assigned week.
-    if (weekFallbackDna.includes(dnaId)) score += 0.5;
+    // Mission focus DNA are strong fit candidates, not a hard unique quota.
+    if (weekFallbackDna.includes(dnaId)) score += 1.5;
     if (score > 0) {
-      scored.push({ dnaId, score });
+      scoreByDna.set(dnaId, score);
       matchedKeywords.push(...hits);
     }
   }
 
-  scored.sort((a, b) => b.score - a.score);
-  const keywordDnaIds: DNAId[] = scored.map((s) => s.dnaId);
-
-  // Mission dnaFocus first so practice guides stay aligned with the assignment.
-  const relevantDnaIds: DNAId[] = [];
   for (const id of weekFallbackDna) {
-    if (relevantDnaIds.length >= 3) break;
-    if (!relevantDnaIds.includes(id)) relevantDnaIds.push(id);
-  }
-  for (const id of keywordDnaIds) {
-    if (relevantDnaIds.length >= 3) break;
-    if (!relevantDnaIds.includes(id)) relevantDnaIds.push(id);
+    if (!scoreByDna.has(id)) scoreByDna.set(id, 1);
   }
   for (const id of DEFAULT_DNA_FALLBACK) {
-    if (relevantDnaIds.length >= 3) break;
-    if (!relevantDnaIds.includes(id)) relevantDnaIds.push(id);
+    if (!scoreByDna.has(id)) scoreByDna.set(id, 0.25);
   }
-  relevantDnaIds.splice(3);
+
+  const ranked = Array.from(scoreByDna.entries()).sort((a, b) => b[1] - a[1]);
+  const tipCursor = new Map<DNAId, number>();
+  const guides: ActionGuide[] = [];
+  const relevantDnaIds: DNAId[] = [];
+
+  // Greedy: for each of 3 slots, pick the highest-scoring DNA that still has
+  // a library tip; allow the same DNA again if it remains top fit.
+  while (guides.length < 3 && ranked.length > 0) {
+    let picked: DNAId | null = null;
+    for (const [dnaId] of ranked) {
+      const pool = ACTION_GUIDES_BY_DNA.get(dnaId) ?? [];
+      const cursor = tipCursor.get(dnaId) ?? 0;
+      if (cursor < pool.length) {
+        picked = dnaId;
+        break;
+      }
+    }
+    if (!picked) break;
+    const cursor = tipCursor.get(picked) ?? 0;
+    const tip = ACTION_GUIDES_BY_DNA.get(picked)![cursor]!;
+    tipCursor.set(picked, cursor + 1);
+    relevantDnaIds.push(picked);
+    guides.push({
+      ...tip,
+      id: `guide-${picked}-${cursor}-${guides.length}`,
+    });
+  }
 
   const shortLabel = (id: DNAId) => DNA_MAP.get(id)?.shortLabel ?? id;
   const uniqueKeywords = Array.from(new Set(matchedKeywords)).slice(0, 5);
   const missionLabels = weekFallbackDna.map(shortLabel).join(", ");
+  const guideLabels = relevantDnaIds.map(shortLabel).join(", ");
 
   let rationale: string;
   if (weekFallbackDna.length > 0) {
-    rationale = `이번 미션 초점(${missionLabels})을 우선으로 두고${
+    rationale = `미션과 핵심가치의 실천 맥락 적합성을 기준으로${
       uniqueKeywords.length > 0
-        ? `, "${uniqueKeywords.join(", ")}" 신호로 보완해`
+        ? ` "${uniqueKeywords.join(", ")}" 신호를 반영해`
         : ""
-    } ${relevantDnaIds
-      .map(shortLabel)
-      .join(", ")} 가이드 3가지를 골랐어요.`;
+    } ${guideLabels} 가이드 3가지를 골랐어요${
+      missionLabels ? ` (미션 초점 후보: ${missionLabels})` : ""
+    }.`;
   } else if (uniqueKeywords.length > 0) {
-    rationale = `입력하신 업무에서 "${uniqueKeywords.join(
+    rationale = `업무와 가치의 연결 신호("${uniqueKeywords.join(
       ", "
-    )}" 신호가 강해 ${relevantDnaIds
-      .map(shortLabel)
-      .join(", ")} 핵심가치 3가지를 우선순위로 골랐어요.`;
+    )}")가 강해 ${guideLabels} 실천 가이드 3가지를 제안해요.`;
   } else {
-    rationale = `뚜렷한 업무 키워드가 없어 기본 초점(${relevantDnaIds
-      .map(shortLabel)
-      .join(", ")}) 기준으로 가이드 3가지를 제시했어요.`;
+    rationale = `뚜렷한 미션–가치 신호가 약해 ${guideLabels} 기준으로 실천 가이드 3가지를 제안해요.`;
   }
-
-  // Exactly one tip per selected DNA → 3 checklist items.
-  const guides: ActionGuide[] = relevantDnaIds
-    .map((id) => ACTION_GUIDES_BY_DNA.get(id)?.[0])
-    .filter((g): g is ActionGuide => Boolean(g))
-    .slice(0, 3);
 
   return { relevantDnaIds, matchedKeywords: uniqueKeywords, rationale, guides };
 }

@@ -3,23 +3,40 @@ import { analyzeTaskContext } from "@/lib/ai";
 import {
   ALL_DNA_IDS,
   PORTAL_TONE,
-  buildGuidesFromDna,
+  PRACTICE_GUIDE_GOAL,
+  buildPracticeGuides,
   sanitizeDnaIds,
+  sanitizeDnaIdsAllowDuplicate,
   sanitizeStringList,
 } from "@/lib/ai-server";
 import { generateGeminiJson, isGeminiConfigured } from "@/lib/gemini";
-import type { DNAId } from "@/lib/types";
 import { DNA_MAP } from "@/lib/seed";
 
 export const runtime = "nodejs";
 
-/** Keep the system prompt short — long instructions + thinking were ~6s. */
 const SYSTEM = `IX Compass 실천 가이드 JSON 에이전트.
 ${PORTAL_TONE}
-업무에 맞는 DNA 3개와 tip 3개를 JSON으로만 답하세요.
-DNA: ${ALL_DNA_IDS.join(", ")}
-스키마: {"relevantDnaIds":["id","id","id"],"matchedKeywords":["k"],"rationale":"1문장","guides":[{"dnaId":"id","text":"오늘 tip 한 문장"}]}
-규칙: dna 3개·중복금지, weekFallbackDna 우선, tip은 짧게.`;
+${PRACTICE_GUIDE_GOAL}
+
+허용 DNA id: ${ALL_DNA_IDS.join(", ")}
+스키마(JSON만):
+{
+  "relevantDnaIds": ["id","id","id"],
+  "matchedKeywords": ["미션에서 읽은 관계 신호"],
+  "rationale": "미션과 선택한 가치의 실천 맥락 관계를 1~2문장으로",
+  "guides": [
+    {"dnaId":"id","text":"오늘 이 미션에 바로 적용할 실천 tip 한 문장"},
+    {"dnaId":"id","text":"..."},
+    {"dnaId":"id","text":"..."}
+  ]
+}
+
+선정 규칙:
+1. 미션 과업을 먼저 이해한 뒤, 각 DNA가 그 미션에서 '어떻게 실천·체득되는지' 관계성을 평가한다.
+2. 적합성이 가장 높은 실천 가이드 3개를 제안한다. 서로 다른 DNA를 채우는 것이 목표가 아니다.
+3. 같은 DNA가 미션과 가장 깊게 연결되면 relevantDnaIds/guides에 동일 id가 반복되어도 된다.
+4. missionFocusDna는 후보 힌트일 뿐이며, 미션과의 적합성이 낮으면 억지로 넣지 않는다.
+5. tip 문장은 추상 덕목이 아니라 이번 미션 과업에 구체적 행동을 연결한다.`;
 
 type Body = {
   taskText?: unknown;
@@ -43,8 +60,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "taskText too long" }, { status: 400 });
   }
 
-  const weekFallbackDna = sanitizeDnaIds(body.weekFallbackDna, 4);
-  const fallback = () => analyzeTaskContext(taskText, weekFallbackDna);
+  const missionFocusDna = sanitizeDnaIds(body.weekFallbackDna, 4);
+  const fallback = () => analyzeTaskContext(taskText, missionFocusDna);
 
   if (!isGeminiConfigured()) {
     return NextResponse.json({
@@ -58,7 +75,6 @@ export async function POST(request: Request) {
     const dnaCatalog = ALL_DNA_IDS.map(
       (id) => `${id}:${DNA_MAP.get(id)?.shortLabel ?? id}`
     ).join(", ");
-    // Truncate long mission paste — model only needs the gist for tip ranking.
     const compactTask =
       taskText.length > 900 ? `${taskText.slice(0, 900)}…` : taskText;
 
@@ -70,37 +86,35 @@ export async function POST(request: Request) {
     }>(
       SYSTEM,
       [
-        `DNA: ${dnaCatalog}`,
-        weekFallbackDna.length
-          ? `focus: ${weekFallbackDna.join(",")}`
-          : "focus: none",
-        `task: ${compactTask}`,
-      ].join("\n"),
-      { maxOutputTokens: 512, thinkingBudget: 0, retryOnParseError: false }
+        `DNA 목록: ${dnaCatalog}`,
+        missionFocusDna.length
+          ? `missionFocusDna(후보 힌트, 강제 아님): ${missionFocusDna.join(",")}`
+          : "missionFocusDna: none",
+        `미션/업무:\n${compactTask}`,
+        "위 미션과 핵심가치의 실천 맥락 적합성이 가장 높은 가이드 3개를 고르세요. 필요하면 동일 DNA를 반복하세요.",
+      ].join("\n\n"),
+      { maxOutputTokens: 640, thinkingBudget: 0, retryOnParseError: false }
     );
 
-    let relevantDnaIds = sanitizeDnaIds(raw.relevantDnaIds, 3);
-    for (const id of weekFallbackDna) {
-      if (relevantDnaIds.length >= 3) break;
-      if (!relevantDnaIds.includes(id)) relevantDnaIds.push(id);
-    }
-    if (relevantDnaIds.length < 3) {
-      const fb = fallback();
-      for (const id of fb.relevantDnaIds) {
-        if (relevantDnaIds.length >= 3) break;
-        if (!relevantDnaIds.includes(id)) relevantDnaIds.push(id);
-      }
-    }
-    relevantDnaIds = relevantDnaIds.slice(0, 3) as DNAId[];
-    if (relevantDnaIds.length < 3) {
+    const { guides, relevantDnaIds } = buildPracticeGuides(
+      raw.guides,
+      // Fill only if model returned fewer than 3 valid guides.
+      // Keep duplicate DNA order from the model when present.
+      Array.isArray(raw.relevantDnaIds)
+        ? sanitizeDnaIdsAllowDuplicate(raw.relevantDnaIds, 6).concat(
+            missionFocusDna
+          )
+        : missionFocusDna
+    );
+
+    if (guides.length < 3) {
       return NextResponse.json({
         result: fallback(),
         source: "fallback",
-        reason: "invalid_dna_set",
+        reason: "invalid_guide_set",
       });
     }
 
-    const guides = buildGuidesFromDna(relevantDnaIds, raw.guides);
     const rationale =
       typeof raw.rationale === "string" && raw.rationale.trim()
         ? raw.rationale.trim()
